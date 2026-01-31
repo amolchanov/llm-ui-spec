@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  FormCraft - Shared Definitions
+
+  Contains entities and reusable components shared across all platform specs:
+  - formcraft.webapp.spec.xml (web version)
+  - formcraft.mobile.spec.xml (mobile version)
+  - formcraft.desktop.spec.xml (desktop version)
+-->
+<spec type="shared" webapp="FormCraft">
+
+  <!-- ==================== ENTITIES ==================== -->
+  <entities>
+    <entity name="User">
+      <field name="id" type="uuid" />
+      <field name="email" type="email" required="true" />
+      <field name="name" type="string" required="true" />
+      <field name="avatar" type="image" />
+      <field name="plan" type="enum" values="free,pro,enterprise" default="free" />
+      <field name="createdAt" type="datetime" />
+      <field name="forms" type="ref" ref="@entity.Form" cardinality="many" />
+      <field name="apiKeys" type="ref" ref="@entity.ApiKey" cardinality="many" />
+    </entity>
+
+    <entity name="Form">
+      <field name="id" type="uuid" />
+      <field name="name" type="string" required="true" />
+      <field name="description" type="text" />
+      <field name="slug" type="string" unique="true" />
+      <field name="fields" type="ref" ref="@entity.FormField" cardinality="many" ordered="true" />
+      <field name="settings" type="ref" ref="@entity.FormSettings" cardinality="one" />
+      <field name="owner" type="ref" ref="@entity.User" cardinality="one" />
+      <field name="submissions" type="ref" ref="@entity.Submission" cardinality="many" />
+      <field name="status" type="enum" values="draft,published,archived" default="draft" />
+      <field name="createdAt" type="datetime" />
+      <field name="updatedAt" type="datetime" />
+      <field name="publishedAt" type="datetime" />
+    </entity>
+
+    <entity name="FormField">
+      <field name="id" type="uuid" />
+      <field name="type" type="enum" values="text,email,number,phone,textarea,select,radio,checkbox,date,time,file,signature,rating,hidden" />
+      <field name="label" type="string" required="true" />
+      <field name="placeholder" type="string" />
+      <field name="helpText" type="string" />
+      <field name="required" type="boolean" default="false" />
+      <field name="validation" type="json" />
+      <field name="options" type="json" />
+      <field name="conditionalLogic" type="json" />
+      <field name="order" type="integer" />
+    </entity>
+
+    <entity name="FormSettings">
+      <field name="id" type="uuid" />
+      <field name="submitButtonText" type="string" default="Submit" />
+      <field name="successMessage" type="text" />
+      <field name="redirectUrl" type="url" />
+      <field name="notifyEmail" type="email" />
+      <field name="enableCaptcha" type="boolean" default="false" />
+      <field name="allowMultipleSubmissions" type="boolean" default="true" />
+      <field name="closeAfterDate" type="datetime" />
+      <field name="maxSubmissions" type="integer" />
+      <field name="customCss" type="text" />
+      <field name="webhookUrl" type="url" />
+    </entity>
+
+    <entity name="Submission">
+      <field name="id" type="uuid" />
+      <field name="form" type="ref" ref="@entity.Form" />
+      <field name="data" type="json" />
+      <field name="metadata" type="json" />
+      <field name="ipAddress" type="string" />
+      <field name="userAgent" type="string" />
+      <field name="createdAt" type="datetime" />
+      <field name="isRead" type="boolean" default="false" />
+      <field name="isSpam" type="boolean" default="false" />
+    </entity>
+
+    <entity name="ApiKey">
+      <field name="id" type="uuid" />
+      <field name="name" type="string" required="true" />
+      <field name="key" type="string" />
+      <field name="permissions" type="enum" values="read,write,admin" />
+      <field name="lastUsedAt" type="datetime" />
+      <field name="createdAt" type="datetime" />
+    </entity>
+  </entities>
+
+
+  <!-- ==================== SHARED COMPONENTS ==================== -->
+  <components>
+
+    <!-- Avatar Component -->
+    <component name="Avatar">
+      <props>
+        <prop name="src" type="image" />
+        <prop name="name" type="string" />
+        <prop name="size" type="enum" values="xs,sm,md,lg,xl" default="md" />
+      </props>
+      <prompt>
+        Circular avatar image with fallback to initials.
+        Sizes: xs=20px, sm=28px, md=36px, lg=48px, xl=64px.
+        If no src, show first two initials on colored background.
+        Color should be deterministic based on name.
+      </prompt>
+    </component>
+
+
+    <!-- Form Card for Lists -->
+    <component name="FormCard">
+      <props>
+        <prop name="form" type="@entity.Form" required="true" />
+      </props>
+      <actions>
+        <action name="onEdit" />
+        <action name="onDuplicate" />
+        <action name="onDelete" />
+        <action name="onShare" />
+      </actions>
+
+      <container
+        layout="column"
+        padding="md"
+        background="white"
+        borderRadius="md"
+        shadow="sm"
+        interactive="true"
+      >
+        <container layout="row" justify="between" align="start">
+          <container layout="column" gap="xs">
+            <text value="@prop.form.name" variant="subtitle" weight="medium" />
+            <text value="@prop.form.description" variant="caption" muted="true" truncate="2" />
+          </container>
+        </container>
+
+        <container layout="row" gap="md" marginTop="md">
+          <tag icon="file-text">{@prop.form.fields.length} fields</tag>
+          <tag icon="inbox">{@prop.form.submissions.length} responses</tag>
+          <badge value="@prop.form.status" />
+        </container>
+
+        <container layout="row" justify="between" align="center" marginTop="md">
+          <text variant="caption" muted="true">
+            Updated {formatRelative(@prop.form.updatedAt)}
+          </text>
+        </container>
+      </container>
+    </component>
+
+
+    <!-- Stat Card -->
+    <component name="StatCard">
+      <props>
+        <prop name="label" type="string" required="true" />
+        <prop name="value" type="number" required="true" />
+        <prop name="icon" type="string" />
+        <prop name="trend" type="number" />
+        <prop name="trendLabel" type="string" />
+        <prop name="compact" type="boolean" default="false" />
+      </props>
+
+      <container layout="column" padding="@prop.compact ? 'sm' : 'lg'" background="white" borderRadius="md" shadow="sm">
+        <container layout="row" justify="between" align="center">
+          <text value="@prop.label" variant="caption" muted="true" />
+          <if condition="@prop.icon">
+            <icon name="@prop.icon" size="sm" color="@theme.colors.muted" />
+          </if>
+        </container>
+        <text value="@prop.value" variant="@prop.compact ? 'heading3' : 'heading2'" />
+        <if condition="@prop.trend">
+          <container layout="row" gap="xs" align="center">
+            <icon
+              name="{@prop.trend > 0 ? 'trending-up' : 'trending-down'}"
+              size="xs"
+              color="{@prop.trend > 0 ? @theme.colors.success : @theme.colors.danger}"
+            />
+            <text
+              value="{Math.abs(@prop.trend)}%"
+              variant="caption"
+              color="{@prop.trend > 0 ? @theme.colors.success : @theme.colors.danger}"
+            />
+            <text value="@prop.trendLabel" variant="caption" muted="true" />
+          </container>
+        </if>
+      </container>
+    </component>
+
+
+    <!-- Empty State -->
+    <component name="EmptyState">
+      <props>
+        <prop name="icon" type="string" default="inbox" />
+        <prop name="title" type="string" required="true" />
+        <prop name="description" type="string" />
+        <prop name="actionLabel" type="string" />
+      </props>
+      <actions>
+        <action name="onAction" />
+      </actions>
+
+      <container layout="column" align="center" gap="md" padding="xl">
+        <container
+          layout="center"
+          width="64px"
+          height="64px"
+          borderRadius="full"
+          background="@theme.colors.gray.100"
+        >
+          <icon name="@prop.icon" size="lg" color="@theme.colors.muted" />
+        </container>
+        <text value="@prop.title" variant="heading3" align="center" />
+        <if condition="@prop.description">
+          <text value="@prop.description" variant="body" muted="true" align="center" maxWidth="300px" />
+        </if>
+        <if condition="@prop.actionLabel">
+          <button variant="primary" onClick="@action.onAction">
+            {@prop.actionLabel}
+          </button>
+        </if>
+      </container>
+    </component>
+
+
+    <!-- Submission Row -->
+    <component name="SubmissionRow">
+      <props>
+        <prop name="submission" type="@entity.Submission" required="true" />
+      </props>
+      <actions>
+        <action name="onClick" />
+      </actions>
+
+      <container layout="row" padding="sm" gap="md" align="center" interactive="true">
+        <if condition="!@prop.submission.isRead">
+          <container width="8px" height="8px" borderRadius="full" background="@theme.colors.primary" />
+        </if>
+        <column grow="true" gap="xs">
+          <text value="@prop.submission.form.name" variant="body" weight="medium" />
+          <text value="{summarize(@prop.submission.data, 50)}" variant="caption" muted="true" />
+        </column>
+        <text value="@prop.submission.createdAt" format="relative" variant="caption" muted="true" />
+      </container>
+    </component>
+
+  </components>
+
+
+  <!-- ==================== THEME ==================== -->
+  <config>
+    <theme>
+      <colors>
+        <primary>#6366F1</primary>
+        <secondary>#8B5CF6</secondary>
+        <success>#10B981</success>
+        <warning>#F59E0B</warning>
+        <danger>#EF4444</danger>
+        <muted>#6B7280</muted>
+        <gray>
+          <50>#F9FAFB</50>
+          <100>#F3F4F6</100>
+          <200>#E5E7EB</200>
+          <300>#D1D5DB</300>
+          <400>#9CA3AF</400>
+          <500>#6B7280</500>
+          <600>#4B5563</600>
+          <700>#374151</700>
+          <800>#1F2937</800>
+          <900>#111827</900>
+        </gray>
+      </colors>
+      <spacing unit="4px" />
+      <borderRadius default="8px" />
+    </theme>
+  </config>
+
+</spec>

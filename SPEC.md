@@ -480,6 +480,255 @@ You can combine inline and external definitions:
 
 ---
 
+## Platform-Specific Specs
+
+For cross-platform applications, you can separate shared definitions from platform-specific UI using a naming convention.
+
+### File Naming Convention
+
+| Platform | File Pattern | Description |
+|----------|--------------|-------------|
+| `shared` | `<app>.shared.spec.xml` | Common entities, components, styles |
+| `webapp` | `<app>.webapp.spec.xml` | Web routes, pages, modals, sidebar layouts |
+| `mobile` | `<app>.mobile.spec.xml` | Mobile screens, tabs, sheets, native navigation |
+| `desktop` | `<app>.desktop.spec.xml` | Windows, menus, toolbars, context menus |
+
+### What Goes Where
+
+**Shared spec (`myapp.shared.spec.xml`):**
+- Entities (data models)
+- Reusable components
+- Theme tokens
+- Common validation rules
+
+**Platform specs (`myapp.<platform>.spec.xml`):**
+- Layouts (platform-specific structure)
+- Pages/Screens (platform-specific navigation)
+- Platform-specific UI patterns (modals vs sheets)
+- Navigation structure
+
+### Example Structure
+
+```
+formcraft/
+├── formcraft.shared.spec.xml   # Entities, components
+├── formcraft.spec.xml          # Web pages, modals (webapp)
+├── formcraft.mobile.spec.xml   # Mobile screens, sheets
+└── formcraft.desktop.spec.xml  # Desktop windows, menus
+```
+
+See the `samples/` directory for complete FormCraft examples.
+
+### Shared Spec File
+
+**myapp.shared.spec.xml:**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<spec type="shared" webapp="MyApp">
+  <entities>
+    <entity name="User">
+      <field name="id" type="uuid" />
+      <field name="email" type="email" required="true" />
+      <field name="name" type="string" required="true" />
+    </entity>
+
+    <entity name="Project">
+      <field name="id" type="uuid" />
+      <field name="name" type="string" required="true" />
+      <field name="owner" type="ref" ref="@entity.User" />
+      <field name="status" type="enum" values="active,archived" />
+    </entity>
+  </entities>
+
+  <components>
+    <component name="ProjectCard">
+      <props>
+        <prop name="project" type="@entity.Project" required="true" />
+        <prop name="onClick" type="action" />
+      </props>
+      <container variant="card" padding="md">
+        <text variant="heading4" value="@prop.project.name" />
+        <badge value="@prop.project.status" />
+      </container>
+    </component>
+
+    <component name="UserAvatar">
+      <props>
+        <prop name="user" type="@entity.User" required="true" />
+        <prop name="size" type="enum" values="sm,md,lg" default="md" />
+      </props>
+      <image src="@prop.user.avatar" fallback="initials(@prop.user.name)" shape="circle" />
+    </component>
+  </components>
+</spec>
+```
+
+### Web App Spec
+
+**myapp.webapp.spec.xml:**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<webapp name="MyApp" version="1.0">
+  <import src="./myapp.shared.spec.xml" />
+
+  <layouts>
+    <layout name="AppShell">
+      <container layout="row" minHeight="100vh">
+        <slot name="sidebar" width="240px" role="chrome" />
+        <container layout="column" grow="true">
+          <slot name="header" height="64px" role="chrome" />
+          <slot name="content" grow="true" scroll="true" role="content" />
+        </container>
+      </container>
+    </layout>
+  </layouts>
+
+  <pages>
+    <page name="Dashboard" route="/dashboard" layout="AppShell" auth="required">
+      <slot target="@layout.AppShell.content">
+        <container layout="grid" columns="3" gap="md">
+          <for each="project" in="@state.projects">
+            <use component="ProjectCard" project="@item" onClick="navigate('/projects/' + @item.id)" />
+          </for>
+        </container>
+      </slot>
+    </page>
+  </pages>
+
+  <modals>
+    <modal name="CreateProject" title="New Project" size="medium">
+      <form onSubmit="@action.createProject">
+        <input label="Project Name" bind="name" required="true" />
+        <button type="submit">Create</button>
+      </form>
+    </modal>
+  </modals>
+</webapp>
+```
+
+### Mobile App Spec
+
+**myapp.mobile.spec.xml:**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<webapp name="MyApp" version="1.0">
+  <import src="./myapp.shared.spec.xml" />
+
+  <navigation type="tabs">
+    <tab name="home" label="Home" icon="home" screen="@screen.Dashboard" />
+    <tab name="projects" label="Projects" icon="folder" screen="@screen.Projects" />
+    <tab name="profile" label="Profile" icon="user" screen="@screen.Profile" />
+  </navigation>
+
+  <screens>
+    <screen name="Dashboard" initial="true">
+      <column padding="md" gap="lg" safeArea="true">
+        <text variant="largeTitle">Dashboard</text>
+        <for each="project" in="@state.projects">
+          <use component="ProjectCard" project="@item" onClick="push(@screen.ProjectDetail, { id: @item.id })" />
+        </for>
+      </column>
+      <floatingButton icon="plus" onClick="presentSheet(@sheet.CreateProject)" />
+    </screen>
+  </screens>
+
+  <sheets>
+    <sheet name="CreateProject" height="auto" dismissible="true">
+      <form onSubmit="@action.createProject" onSuccess="dismissSheet()">
+        <input label="Project Name" bind="name" required="true" />
+        <button type="submit" fullWidth="true">Create</button>
+      </form>
+    </sheet>
+  </sheets>
+</webapp>
+```
+
+### Desktop App Spec
+
+**myapp.desktop.spec.xml:**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<webapp name="MyApp" version="1.0">
+  <import src="./myapp.shared.spec.xml" />
+
+  <window name="MainWindow" title="MyApp" width="1200" height="800">
+    <menuBar>
+      <menu label="File">
+        <menuItem label="New Project" shortcut="Cmd+N" onClick="openDialog(@dialog.CreateProject)" />
+        <separator />
+        <menuItem label="Quit" shortcut="Cmd+Q" onClick="@action.quit" />
+      </menu>
+    </menuBar>
+
+    <toolbar>
+      <toolbarItem icon="plus" label="New" onClick="openDialog(@dialog.CreateProject)" />
+      <spacer />
+      <search placeholder="Search..." onSearch="@action.search" />
+    </toolbar>
+
+    <row grow="true">
+      <panel name="sidebar" width="220">
+        <navItem icon="home" label="Dashboard" onClick="@action.setView('dashboard')" />
+        <navItem icon="folder" label="Projects" onClick="@action.setView('projects')" />
+      </panel>
+      <panel name="main" grow="true">
+        <table data="@state.projects" sortable="true">
+          <tableColumn field="name" header="Name" />
+          <tableColumn field="status" header="Status" />
+        </table>
+      </panel>
+    </row>
+
+    <statusBar>
+      <statusItem>@state.projectCount projects</statusItem>
+    </statusBar>
+  </window>
+
+  <dialogs>
+    <dialog name="CreateProject" title="New Project" width="500">
+      <form onSubmit="@action.createProject" onSuccess="closeDialog()">
+        <input label="Project Name" bind="name" required="true" />
+        <button type="submit">Create</button>
+      </form>
+    </dialog>
+  </dialogs>
+</webapp>
+```
+
+### Platform Detection
+
+The platform is determined by the file name pattern, not an attribute:
+
+- `*.shared.spec.xml` → Shared definitions
+- `*.webapp.spec.xml` → Web application
+- `*.mobile.spec.xml` → Mobile application
+- `*.desktop.spec.xml` → Desktop application
+
+This allows LLMs to use platform-specific schemas and patterns based on which file they're working with.
+
+### Import Element
+
+Use `<import>` to include shared definitions:
+
+```xml
+<import src="./myapp.shared.spec.xml" />
+```
+
+The import element loads all entities, components, and other shared definitions from the referenced file.
+
+### Keeping Specs in Sync
+
+When shared entities or components change, LLMs can update platform-specific specs accordingly:
+
+```
+Prompt: "Update the mobile and desktop specs to match the new User entity fields
+added in the shared spec."
+```
+
+Each platform spec uses its own UI patterns while referencing the same underlying data models.
+
+---
+
 ## Entities
 
 Define data models that components bind to.
