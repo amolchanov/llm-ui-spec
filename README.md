@@ -67,18 +67,107 @@ cd compiler && npm install && npm run build
 node dist/cli.js ../samples/formcraft.spec.xml -o output.md
 ```
 
-## Detail Levels
+## Iterative Development
 
-Specs support 4 progressive detail levels for iterative development:
+LLM UI Spec supports progressive refinement through 4 detail levels. Start with high-level requirements and iteratively add detail, validating at each step.
 
-| Level | Attribute | Description |
-|-------|-----------|-------------|
-| L1 | `detail="requirements"` | High-level prompts for pages and layouts |
-| L2 | `detail="structure"` | Layout slots and section-level prompts |
-| L3 | `detail="detailed"` | Containers, loops, conditions, component refs |
-| L4 | `detail="full"` | Complete UI specification, ready for codegen |
+```mermaid
+flowchart TB
+    subgraph L1["**L1: Requirements**"]
+        L1a["User stories, features, entity names"]
+    end
 
-See [samples/llm-workflow-guide.md](samples/llm-workflow-guide.md) for LLM prompts to guide the iterative process.
+    subgraph L2["**L2: Structure**"]
+        L2a["Layout slots, page sections, data queries"]
+    end
+
+    subgraph L3["**L3: Detailed**"]
+        L3a["Containers, loops, conditions, component refs"]
+    end
+
+    subgraph L4["**L4: Full Spec**"]
+        L4a["Complete UI, ready for code generation"]
+    end
+
+    L1 -->|"Add layouts & slots"| L2
+    L2 -->|"Add containers & logic"| L3
+    L3 -->|"Complete all elements"| L4
+
+    style L1 fill:#e1f5fe
+    style L2 fill:#fff3e0
+    style L3 fill:#f3e5f5
+    style L4 fill:#e8f5e9
+```
+
+### Detail Levels
+
+| Level | Attribute | Contains | Prompts For |
+|-------|-----------|----------|-------------|
+| L1 | `detail="requirements"` | Entities, page names, layout names | Entire pages and layouts |
+| L2 | `detail="structure"` | Layout slots, page sections, data queries | Section-level UI |
+| L3 | `detail="detailed"` | Containers, loops, conditions, component refs | Complex interactions, styling |
+| L4 | `detail="full"` | Complete UI elements | None (or minimal) |
+
+### Example: Same Page at Each Level
+
+**L1 - Requirements:**
+```xml
+<page name="Dashboard" route="/dashboard" auth="required">
+  <prompt>Main dashboard showing form count, submission stats, recent activity</prompt>
+</page>
+```
+
+**L2 - Structure:**
+```xml
+<page name="Dashboard" route="/dashboard" layout="AppShell" auth="required">
+  <data>
+    <query name="stats" source="api/dashboard/stats" />
+    <query name="recentForms" type="@entity.Form[]" limit="6" />
+  </data>
+  <slot target="@layout.AppShell.content">
+    <prompt>Stats row: 4 cards showing total forms, submissions, completion rate</prompt>
+    <prompt>Recent forms section: grid of FormCard components</prompt>
+  </slot>
+</page>
+```
+
+**L3 - Detailed:**
+```xml
+<page name="Dashboard" route="/dashboard" layout="AppShell" auth="required">
+  <data>
+    <query name="stats" source="api/dashboard/stats" />
+    <query name="recentForms" type="@entity.Form[]" limit="6" />
+  </data>
+  <slot target="@layout.AppShell.content">
+    <container layout="column" gap="xl">
+      <container layout="grid" columns="4" gap="md">
+        <use component="StatCard" label="Total Forms" value="@state.stats.totalForms" />
+        <use component="StatCard" label="Submissions" value="@state.stats.submissions" />
+      </container>
+      <section>
+        <heading level="2">Recent Forms</heading>
+        <if condition="@state.recentForms.length > 0">
+          <for each="form" in="@state.recentForms">
+            <use component="FormCard" form="@item" />
+          </for>
+        </if>
+        <else>
+          <prompt>Empty state with illustration and "Create Form" button</prompt>
+        </else>
+      </section>
+    </container>
+  </slot>
+</page>
+```
+
+### Why Iterative?
+
+- **Validate early** - Review structure before investing in details
+- **Faster feedback** - Each level can be reviewed independently
+- **Flexible detail** - Keep some sections as prompts, fully specify others
+- **LLM-assisted refinement** - Use LLMs to expand each level
+
+See [samples/llm-workflow-guide.md](samples/llm-workflow-guide.md) for LLM prompts to guide each level transition.
 
 ## Reference Namespaces
 
