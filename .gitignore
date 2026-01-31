@@ -1,0 +1,18 @@
+# Claude Code local settings
+.claude/settings.local.json
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Editor temp files
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,1797 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  FormCraft - A SaaS application for creating web forms and self-hosting them
+
+  This sample demonstrates:
+  - Well-defined pages (Dashboard, Form Editor, Form List)
+  - Prompt-guided pages (Analytics, Settings, Pricing)
+  - Mixed pages (Form Builder with defined structure but prompt-guided components)
+  - Editor namespace for role hints (chrome vs content areas)
+-->
+<webapp
+  xmlns:editor="http://llm-ui-spec.org/editor"
+  xmlns:prompt="http://llm-ui-spec.org/prompt"
+  name="FormCraft"
+  version="1.0"
+  designSystem="tailwind"
+>
+
+  <!-- ==================== ENTITIES ==================== -->
+  <!-- External entities file -->
+  <entities src="./formcraft.entities.spec.xml" />
+
+
+  <!-- ==================== LAYOUTS ==================== -->
+  <layouts>
+
+    <!-- External layout file -->
+    <layout name="AppShell" src="./formcraft.layout.AppShell.spec.xml" />
+
+    <layout name="AuthLayout">
+      <container layout="row" minHeight="100vh">
+        <container width="50%" hideBelow="md" background="@theme.colors.primary">
+          <slot name="branding" role="chrome" />
+        </container>
+        <container width="50%" layout="center" padding="xl">
+          <slot name="content" maxWidth="400px" role="content" />
+        </container>
+      </container>
+    </layout>
+
+    <layout name="FormEditorLayout">
+      <container layout="column" minHeight="100vh">
+        <slot name="toolbar" position="top" height="56px" role="chrome" />
+        <container layout="row" grow="true">
+          <slot name="fieldPalette" width="280px" role="chrome" />
+          <slot name="canvas" grow="true" background="@theme.colors.gray.100" role="content" />
+          <slot name="properties" width="320px" role="chrome" />
+        </container>
+      </container>
+    </layout>
+
+    <layout name="PublicFormLayout">
+      <container layout="center" minHeight="100vh" padding="lg" background="@theme.colors.gray.50">
+        <slot name="content" maxWidth="640px" width="100%" />
+      </container>
+    </layout>
+
+    <layout name="MarketingLayout">
+      <container layout="column" minHeight="100vh">
+        <slot name="header" position="top" sticky="true" role="chrome" />
+        <slot name="content" grow="true" role="content" />
+        <slot name="footer" role="chrome" />
+      </container>
+    </layout>
+
+  </layouts>
+
+
+  <!-- ==================== COMPONENTS ==================== -->
+  <components>
+
+    <!-- Navigation Header -->
+    <component name="AppHeader">
+      <props>
+        <prop name="user" type="@entity.User" />
+      </props>
+
+      <container layout="row" justify="between" align="center" padding="md" background="white" borderBottom="true">
+        <container layout="row" gap="lg" align="center">
+          <link to="@page.Dashboard">
+            <image src="@asset.images.logo" height="32px" alt="FormCraft" />
+          </link>
+        </container>
+
+        <container layout="row" gap="md" align="center">
+          <button variant="ghost" icon="help-circle" onClick="openHelp" />
+          <button variant="ghost" icon="bell" onClick="openNotifications">
+            <badge count="@state.unreadNotifications" />
+          </button>
+          <dropdown trigger="click">
+            <trigger>
+              <use component="@component.Avatar" src="@prop.user.avatar" name="@prop.user.name" size="sm" />
+            </trigger>
+            <menu>
+              <menuItem to="@page.Settings" icon="settings">Settings</menuItem>
+              <menuItem to="@page.Billing" icon="credit-card">Billing</menuItem>
+              <divider />
+              <menuItem onClick="@action.logout" icon="log-out">Log out</menuItem>
+            </menu>
+          </dropdown>
+        </container>
+      </container>
+    </component>
+
+
+    <!-- Sidebar Navigation -->
+    <component name="AppSidebar">
+      <container layout="stack" padding="md" gap="sm" background="white" borderRight="true">
+        <nav>
+          <navItem to="@page.Dashboard" icon="home">Dashboard</navItem>
+          <navItem to="@page.FormList" icon="file-text">Forms</navItem>
+          <navItem to="@page.Submissions" icon="inbox">Submissions</navItem>
+          <navItem to="@page.Analytics" icon="bar-chart-2">Analytics</navItem>
+          <navItem to="@page.Integrations" icon="plug">Integrations</navItem>
+        </nav>
+
+        <spacer />
+
+        <!-- Plan indicator -->
+        <container padding="md" background="@theme.colors.gray.50" borderRadius="md">
+          <text variant="caption" muted="true">Current Plan</text>
+          <text variant="body" weight="medium">{capitalize(@state.user.plan)}</text>
+          <if condition="@state.user.plan == 'free'">
+            <link to="@page.Pricing" variant="primary">Upgrade</link>
+          </if>
+        </container>
+      </container>
+    </component>
+
+
+    <!-- Avatar Component -->
+    <component name="Avatar">
+      <props>
+        <prop name="src" type="image" />
+        <prop name="name" type="string" />
+        <prop name="size" type="enum" values="xs,sm,md,lg,xl" default="md" />
+      </props>
+      <prompt>
+        Circular avatar image with fallback to initials.
+        Sizes: xs=20px, sm=28px, md=36px, lg=48px, xl=64px.
+        If no src, show first two initials on colored background.
+        Color should be deterministic based on name.
+      </prompt>
+    </component>
+
+
+    <!-- Form Card for Lists -->
+    <component name="FormCard">
+      <props>
+        <prop name="form" type="@entity.Form" required="true" />
+      </props>
+      <actions>
+        <action name="onEdit" />
+        <action name="onDuplicate" />
+        <action name="onDelete" />
+      </actions>
+
+      <container
+        layout="stack"
+        padding="md"
+        background="white"
+        borderRadius="md"
+        shadow="sm"
+        interactive="true"
+        onClick="navigateTo(@page.FormEditor, { id: @prop.form.id })"
+      >
+        <container layout="row" justify="between" align="start">
+          <container layout="stack" gap="xs">
+            <text value="@prop.form.name" variant="subtitle" weight="medium" />
+            <text value="@prop.form.description" variant="caption" muted="true" truncate="2" />
+          </container>
+          <dropdown trigger="icon" icon="more-vertical" stopPropagation="true">
+            <menuItem icon="edit" onClick="@action.onEdit">Edit</menuItem>
+            <menuItem icon="copy" onClick="@action.onDuplicate">Duplicate</menuItem>
+            <menuItem icon="external-link" onClick="openPreview(@prop.form.slug)">Preview</menuItem>
+            <divider />
+            <menuItem icon="trash" variant="danger" onClick="@action.onDelete">Delete</menuItem>
+          </dropdown>
+        </container>
+
+        <container layout="row" gap="md" marginTop="md">
+          <tag icon="file-text">{@prop.form.fields.length} fields</tag>
+          <tag icon="inbox">{@prop.form.submissions.length} responses</tag>
+          <badge value="@prop.form.status" />
+        </container>
+
+        <container layout="row" justify="between" align="center" marginTop="md">
+          <text variant="caption" muted="true">
+            Updated {formatRelative(@prop.form.updatedAt)}
+          </text>
+          <if condition="@prop.form.status == 'published'">
+            <button variant="ghost" size="sm" icon="share-2" onClick="shareForm(@prop.form.id)">
+              Share
+            </button>
+          </if>
+        </container>
+      </container>
+    </component>
+
+
+    <!-- Stat Card -->
+    <component name="StatCard">
+      <props>
+        <prop name="label" type="string" required="true" />
+        <prop name="value" type="number" required="true" />
+        <prop name="icon" type="string" />
+        <prop name="trend" type="number" />
+        <prop name="trendLabel" type="string" />
+      </props>
+
+      <container layout="stack" padding="lg" background="white" borderRadius="md" shadow="sm">
+        <container layout="row" justify="between" align="center">
+          <text value="@prop.label" variant="caption" muted="true" />
+          <if condition="@prop.icon">
+            <icon name="@prop.icon" size="sm" color="@theme.colors.muted" />
+          </if>
+        </container>
+        <text value="@prop.value" variant="heading2" />
+        <if condition="@prop.trend">
+          <container layout="row" gap="xs" align="center">
+            <icon
+              name="{@prop.trend > 0 ? 'trending-up' : 'trending-down'}"
+              size="xs"
+              color="{@prop.trend > 0 ? @theme.colors.success : @theme.colors.danger}"
+            />
+            <text
+              value="{Math.abs(@prop.trend)}%"
+              variant="caption"
+              color="{@prop.trend > 0 ? @theme.colors.success : @theme.colors.danger}"
+            />
+            <text value="@prop.trendLabel" variant="caption" muted="true" />
+          </container>
+        </if>
+      </container>
+    </component>
+
+
+    <!-- Form Field Preview (for editor) -->
+    <component name="FieldPreview">
+      <props>
+        <prop name="field" type="@entity.FormField" required="true" />
+        <prop name="selected" type="boolean" default="false" />
+      </props>
+      <actions>
+        <action name="onSelect" />
+        <action name="onDelete" />
+        <action name="onDuplicate" />
+        <action name="onMoveUp" />
+        <action name="onMoveDown" />
+      </actions>
+
+      <container
+        layout="stack"
+        padding="md"
+        background="white"
+        borderRadius="md"
+        border="{@prop.selected ? '2px solid ' + @theme.colors.primary : '1px solid ' + @theme.colors.gray.200}"
+        onClick="@action.onSelect"
+        draggable="true"
+      >
+        <container layout="row" justify="between" align="center">
+          <container layout="row" gap="sm" align="center">
+            <icon name="grip-vertical" color="@theme.colors.muted" cursor="grab" />
+            <text value="@prop.field.label" variant="body" weight="medium" />
+            <if condition="@prop.field.required">
+              <text value="*" color="@theme.colors.danger" />
+            </if>
+          </container>
+          <container layout="row" gap="xs" visible="@prop.selected">
+            <button variant="ghost" size="xs" icon="chevron-up" onClick="@action.onMoveUp" />
+            <button variant="ghost" size="xs" icon="chevron-down" onClick="@action.onMoveDown" />
+            <button variant="ghost" size="xs" icon="copy" onClick="@action.onDuplicate" />
+            <button variant="ghost" size="xs" icon="trash" onClick="@action.onDelete" />
+          </container>
+        </container>
+
+        <!-- Field preview based on type -->
+        <container marginTop="sm" pointerEvents="none">
+          <prompt>
+            Render a disabled preview of the form field based on @prop.field.type:
+            - text/email/phone/number: show input with placeholder
+            - textarea: show textarea
+            - select: show dropdown with options
+            - radio/checkbox: show options
+            - date/time: show date/time picker
+            - file: show file upload zone
+            - signature: show signature pad placeholder
+            - rating: show star rating
+            Show help text if present.
+          </prompt>
+        </container>
+      </container>
+    </component>
+
+
+    <!-- Empty State -->
+    <component name="EmptyState">
+      <props>
+        <prop name="icon" type="string" default="inbox" />
+        <prop name="title" type="string" required="true" />
+        <prop name="description" type="string" />
+        <prop name="actionLabel" type="string" />
+      </props>
+      <actions>
+        <action name="onAction" />
+      </actions>
+
+      <container layout="stack" align="center" gap="md" padding="xl">
+        <container
+          layout="center"
+          width="64px"
+          height="64px"
+          borderRadius="full"
+          background="@theme.colors.gray.100"
+        >
+          <icon name="@prop.icon" size="lg" color="@theme.colors.muted" />
+        </container>
+        <text value="@prop.title" variant="heading3" align="center" />
+        <if condition="@prop.description">
+          <text value="@prop.description" variant="body" muted="true" align="center" maxWidth="300px" />
+        </if>
+        <if condition="@prop.actionLabel">
+          <button variant="primary" onClick="@action.onAction">
+            {@prop.actionLabel}
+          </button>
+        </if>
+      </container>
+    </component>
+
+  </components>
+
+
+  <!-- ==================== PAGES ==================== -->
+  <pages>
+
+    <!-- ============================================== -->
+    <!-- WELL-DEFINED PAGE: Dashboard                   -->
+    <!-- ============================================== -->
+    <page name="Dashboard" route="/dashboard" layout="@layout.AppShell" auth="required">
+      <data>
+        <query name="user" type="@entity.User" source="auth.currentUser" />
+        <query name="forms" type="@entity.Form[]" filter="owner == @state.user.id" limit="5" orderBy="updatedAt desc" />
+        <query name="recentSubmissions" type="@entity.Submission[]" filter="form.owner == @state.user.id" limit="10" orderBy="createdAt desc" />
+        <query name="stats" source="api/dashboard/stats" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <use component="@component.AppHeader" user="@state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <use component="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <container layout="stack" gap="xl">
+
+          <!-- Welcome Section -->
+          <section>
+            <container layout="row" justify="between" align="center">
+              <container layout="stack" gap="xs">
+                <text variant="heading1">Welcome back, {@state.user.name.split(' ')[0]}</text>
+                <text variant="body" muted="true">Here's what's happening with your forms</text>
+              </container>
+              <button variant="primary" icon="plus" onClick="navigateTo(@page.FormCreate)">
+                Create Form
+              </button>
+            </container>
+          </section>
+
+          <!-- Stats Grid -->
+          <section layout="grid" columns="4" gap="md" responsive="{sm: 2, md: 4}">
+            <use
+              component="@component.StatCard"
+              label="Total Forms"
+              value="@state.stats.totalForms"
+              icon="file-text"
+            />
+            <use
+              component="@component.StatCard"
+              label="Total Submissions"
+              value="@state.stats.totalSubmissions"
+              icon="inbox"
+              trend="@state.stats.submissionsTrend"
+              trendLabel="vs last week"
+            />
+            <use
+              component="@component.StatCard"
+              label="Completion Rate"
+              value="{@state.stats.completionRate}%"
+              icon="check-circle"
+            />
+            <use
+              component="@component.StatCard"
+              label="Active Forms"
+              value="@state.stats.activeForms"
+              icon="activity"
+            />
+          </section>
+
+          <!-- Recent Forms -->
+          <section>
+            <container layout="row" justify="between" align="center" marginBottom="md">
+              <text variant="heading2">Recent Forms</text>
+              <link to="@page.FormList">View all</link>
+            </container>
+
+            <if condition="@state.forms.length > 0">
+              <container layout="grid" columns="2" gap="md" responsive="{sm: 1, md: 2}">
+                <for each="form" in="@state.forms">
+                  <use
+                    component="@component.FormCard"
+                    form="@item"
+                    onEdit="navigateTo(@page.FormEditor, { id: @item.id })"
+                    onDuplicate="duplicateForm(@item.id)"
+                    onDelete="confirmDelete(@item.id)"
+                  />
+                </for>
+              </container>
+            </if>
+            <else>
+              <use
+                component="@component.EmptyState"
+                icon="file-plus"
+                title="No forms yet"
+                description="Create your first form to start collecting responses"
+                actionLabel="Create Form"
+                onAction="navigateTo(@page.FormCreate)"
+              />
+            </else>
+          </section>
+
+          <!-- Recent Submissions -->
+          <section>
+            <container layout="row" justify="between" align="center" marginBottom="md">
+              <text variant="heading2">Recent Submissions</text>
+              <link to="@page.Submissions">View all</link>
+            </container>
+
+            <if condition="@state.recentSubmissions.length > 0">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Form</th>
+                    <th>Submitted</th>
+                    <th>Preview</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <for each="submission" in="@state.recentSubmissions">
+                    <tr onClick="navigateTo(@page.SubmissionDetail, { id: @item.id })">
+                      <td>
+                        <text value="@item.form.name" />
+                      </td>
+                      <td>
+                        <text value="@item.createdAt" format="relative" muted="true" />
+                      </td>
+                      <td>
+                        <text value="{summarize(@item.data, 50)}" muted="true" />
+                      </td>
+                      <td>
+                        <if condition="!@item.isRead">
+                          <badge variant="primary">New</badge>
+                        </if>
+                      </td>
+                    </tr>
+                  </for>
+                </tbody>
+              </table>
+            </if>
+            <else>
+              <use
+                component="@component.EmptyState"
+                icon="inbox"
+                title="No submissions yet"
+                description="Share your forms to start receiving responses"
+              />
+            </else>
+          </section>
+
+        </container>
+      </slot>
+
+      <states>
+        <state name="loading">
+          <prompt>Dashboard skeleton with stat cards and form list placeholders</prompt>
+        </state>
+      </states>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- WELL-DEFINED PAGE: Form List                   -->
+    <!-- ============================================== -->
+    <page name="FormList" route="/forms" layout="@layout.AppShell" auth="required">
+      <data>
+        <query name="user" type="@entity.User" source="auth.currentUser" />
+        <query name="forms" type="@entity.Form[]" filter="owner == @state.user.id" paginated="true" pageSize="12" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <use component="@component.AppHeader" user="@state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <use component="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <container layout="stack" gap="lg">
+
+          <!-- Header -->
+          <container layout="row" justify="between" align="center">
+            <text variant="heading1">Forms</text>
+            <button variant="primary" icon="plus" onClick="navigateTo(@page.FormCreate)">
+              Create Form
+            </button>
+          </container>
+
+          <!-- Filters & Search -->
+          <container layout="row" justify="between" align="center" gap="md">
+            <search
+              placeholder="Search forms..."
+              value="@state.searchQuery"
+              onChange="setSearchQuery"
+            />
+            <container layout="row" gap="sm">
+              <select value="@state.statusFilter" onChange="setStatusFilter">
+                <option value="">All Status</option>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+              <select value="@state.sortBy" onChange="setSortBy">
+                <option value="updatedAt">Last Modified</option>
+                <option value="createdAt">Created Date</option>
+                <option value="name">Name</option>
+                <option value="submissions">Submissions</option>
+              </select>
+            </container>
+          </container>
+
+          <!-- Form Grid -->
+          <if condition="@state.forms.length > 0">
+            <container layout="grid" columns="3" gap="md" responsive="{sm: 1, md: 2, lg: 3}">
+              <for each="form" in="@state.forms">
+                <use
+                  component="@component.FormCard"
+                  form="@item"
+                  onEdit="navigateTo(@page.FormEditor, { id: @item.id })"
+                  onDuplicate="duplicateForm(@item.id)"
+                  onDelete="confirmDelete(@item.id)"
+                />
+              </for>
+            </container>
+            <pagination data="@state.forms" />
+          </if>
+          <else>
+            <use
+              component="@component.EmptyState"
+              icon="file-plus"
+              title="No forms found"
+              description="{@state.searchQuery ? 'Try a different search term' : 'Create your first form to get started'}"
+              actionLabel="{@state.searchQuery ? null : 'Create Form'}"
+              onAction="navigateTo(@page.FormCreate)"
+            />
+          </else>
+
+        </container>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- WELL-DEFINED PAGE: Form Editor                 -->
+    <!-- ============================================== -->
+    <page name="FormEditor" route="/forms/:id/edit" layout="@layout.FormEditorLayout" auth="required">
+      <params>
+        <param name="id" type="uuid" />
+      </params>
+      <data>
+        <query name="form" type="@entity.Form" filter="id == @param.id" include="fields,settings" />
+      </data>
+      <localState>
+        <state name="selectedFieldId" type="uuid" default="null" />
+        <state name="isDirty" type="boolean" default="false" />
+        <state name="previewMode" type="boolean" default="false" />
+      </localState>
+
+      <!-- Editor Toolbar -->
+      <slot target="@layout.FormEditorLayout.toolbar">
+        <container layout="row" justify="between" align="center" padding="sm md" background="white" borderBottom="true">
+          <container layout="row" gap="md" align="center">
+            <button variant="ghost" icon="arrow-left" onClick="navigateBack" />
+            <input
+              value="@state.form.name"
+              variant="ghost"
+              size="lg"
+              placeholder="Untitled Form"
+              onChange="updateFormName"
+            />
+            <badge value="@state.form.status" />
+            <if condition="@state.isDirty">
+              <text variant="caption" muted="true">Unsaved changes</text>
+            </if>
+          </container>
+
+          <container layout="row" gap="sm">
+            <button
+              variant="outline"
+              icon="{@state.previewMode ? 'edit' : 'eye'}"
+              onClick="togglePreview"
+            >
+              {@state.previewMode ? 'Edit' : 'Preview'}
+            </button>
+            <button variant="outline" icon="settings" onClick="openSettings">
+              Settings
+            </button>
+            <button
+              variant="secondary"
+              onClick="saveDraft"
+              disabled="!@state.isDirty"
+            >
+              Save Draft
+            </button>
+            <button
+              variant="primary"
+              onClick="publishForm"
+            >
+              {@state.form.status == 'published' ? 'Update' : 'Publish'}
+            </button>
+          </container>
+        </container>
+      </slot>
+
+      <!-- Field Palette -->
+      <slot target="@layout.FormEditorLayout.fieldPalette">
+        <container layout="stack" padding="md" background="white" borderRight="true" scroll="true">
+          <text variant="subtitle" weight="medium" marginBottom="md">Add Fields</text>
+
+          <container layout="stack" gap="xs">
+            <text variant="caption" muted="true" marginBottom="xs">Basic</text>
+            <draggable type="field" data="{type: 'text'}">
+              <fieldPaletteItem icon="type" label="Text" />
+            </draggable>
+            <draggable type="field" data="{type: 'email'}">
+              <fieldPaletteItem icon="mail" label="Email" />
+            </draggable>
+            <draggable type="field" data="{type: 'number'}">
+              <fieldPaletteItem icon="hash" label="Number" />
+            </draggable>
+            <draggable type="field" data="{type: 'phone'}">
+              <fieldPaletteItem icon="phone" label="Phone" />
+            </draggable>
+            <draggable type="field" data="{type: 'textarea'}">
+              <fieldPaletteItem icon="align-left" label="Long Text" />
+            </draggable>
+          </container>
+
+          <container layout="stack" gap="xs" marginTop="lg">
+            <text variant="caption" muted="true" marginBottom="xs">Choice</text>
+            <draggable type="field" data="{type: 'select'}">
+              <fieldPaletteItem icon="chevron-down" label="Dropdown" />
+            </draggable>
+            <draggable type="field" data="{type: 'radio'}">
+              <fieldPaletteItem icon="circle" label="Radio" />
+            </draggable>
+            <draggable type="field" data="{type: 'checkbox'}">
+              <fieldPaletteItem icon="check-square" label="Checkbox" />
+            </draggable>
+          </container>
+
+          <container layout="stack" gap="xs" marginTop="lg">
+            <text variant="caption" muted="true" marginBottom="xs">Advanced</text>
+            <draggable type="field" data="{type: 'date'}">
+              <fieldPaletteItem icon="calendar" label="Date" />
+            </draggable>
+            <draggable type="field" data="{type: 'time'}">
+              <fieldPaletteItem icon="clock" label="Time" />
+            </draggable>
+            <draggable type="field" data="{type: 'file'}">
+              <fieldPaletteItem icon="upload" label="File Upload" />
+            </draggable>
+            <draggable type="field" data="{type: 'signature'}">
+              <fieldPaletteItem icon="pen-tool" label="Signature" />
+            </draggable>
+            <draggable type="field" data="{type: 'rating'}">
+              <fieldPaletteItem icon="star" label="Rating" />
+            </draggable>
+          </container>
+        </container>
+      </slot>
+
+      <!-- Form Canvas -->
+      <slot target="@layout.FormEditorLayout.canvas">
+        <container layout="center" padding="xl">
+          <container
+            layout="stack"
+            width="640px"
+            background="white"
+            borderRadius="lg"
+            shadow="md"
+            padding="xl"
+          >
+            <!-- Form Header -->
+            <container layout="stack" gap="sm" marginBottom="lg">
+              <input
+                value="@state.form.name"
+                variant="ghost"
+                size="xl"
+                placeholder="Form Title"
+                onChange="updateFormName"
+              />
+              <input
+                value="@state.form.description"
+                variant="ghost"
+                placeholder="Form description (optional)"
+                onChange="updateFormDescription"
+              />
+            </container>
+
+            <!-- Fields Drop Zone -->
+            <dropZone
+              accept="field"
+              onDrop="addField"
+              minHeight="200px"
+            >
+              <if condition="@state.form.fields.length > 0">
+                <sortable items="@state.form.fields" onReorder="reorderFields">
+                  <for each="field" in="@state.form.fields">
+                    <use
+                      component="@component.FieldPreview"
+                      field="@item"
+                      selected="@item.id == @state.selectedFieldId"
+                      onSelect="selectField(@item.id)"
+                      onDelete="deleteField(@item.id)"
+                      onDuplicate="duplicateField(@item.id)"
+                      onMoveUp="moveFieldUp(@item.id)"
+                      onMoveDown="moveFieldDown(@item.id)"
+                    />
+                  </for>
+                </sortable>
+              </if>
+              <else>
+                <container layout="center" padding="xl" border="2px dashed @theme.colors.gray.300" borderRadius="md">
+                  <container layout="stack" align="center" gap="sm">
+                    <icon name="plus-circle" size="lg" color="@theme.colors.muted" />
+                    <text variant="body" muted="true">Drag fields here or click to add</text>
+                  </container>
+                </container>
+              </else>
+            </dropZone>
+
+            <!-- Submit Button Preview -->
+            <container marginTop="lg">
+              <button variant="primary" fullWidth="true" disabled="true">
+                {@state.form.settings.submitButtonText || 'Submit'}
+              </button>
+            </container>
+          </container>
+        </container>
+      </slot>
+
+      <!-- Field Properties Panel -->
+      <slot target="@layout.FormEditorLayout.properties">
+        <container layout="stack" padding="md" background="white" borderLeft="true" scroll="true">
+          <if condition="@state.selectedFieldId">
+            <prompt>
+              Field properties editor for the selected field.
+              Show different options based on field type:
+
+              Common properties for all fields:
+              - Label (text input)
+              - Placeholder (text input)
+              - Help text (text input)
+              - Required (toggle)
+
+              For text/email/phone/number:
+              - Min/max length
+              - Pattern validation
+              - Custom error message
+
+              For select/radio/checkbox:
+              - Options editor (add/remove/reorder)
+              - Allow "Other" option
+
+              For date/time:
+              - Min/max date
+              - Date format
+
+              For file:
+              - Allowed file types
+              - Max file size
+              - Multiple files toggle
+
+              For rating:
+              - Max rating (1-10)
+              - Icon style (stars, hearts, etc.)
+
+              Advanced section (collapsible):
+              - Conditional logic builder
+              - Custom CSS class
+              - Field ID (readonly)
+            </prompt>
+          </if>
+          <else>
+            <container layout="center" height="100%">
+              <text variant="body" muted="true" align="center">
+                Select a field to edit its properties
+              </text>
+            </container>
+          </else>
+        </container>
+      </slot>
+
+      <!-- Modals -->
+      <modals>
+        <modal name="settings" title="Form Settings">
+          <prompt>
+            Form settings modal with tabs:
+
+            1. General Tab:
+               - Form name, description
+               - Submit button text
+               - Success message (rich text)
+               - Redirect URL after submission
+
+            2. Notifications Tab:
+               - Email notifications toggle
+               - Notification email addresses
+               - Email template customization
+
+            3. Security Tab:
+               - Enable CAPTCHA
+               - Allow multiple submissions
+               - Close form after date
+               - Max submissions limit
+
+            4. Integrations Tab:
+               - Webhook URL
+               - Zapier connection
+               - Google Sheets integration
+
+            5. Styling Tab:
+               - Custom CSS editor
+               - Theme selection
+          </prompt>
+        </modal>
+      </modals>
+
+      <states>
+        <state name="loading">
+          <prompt>Editor skeleton with toolbar, empty canvas, and properties panel</prompt>
+        </state>
+        <state name="saving">
+          <overlay transparent="true">
+            <spinner label="Saving..." />
+          </overlay>
+        </state>
+      </states>
+
+      <guards>
+        <guard
+          name="unsavedChanges"
+          condition="@state.isDirty"
+          message="You have unsaved changes. Are you sure you want to leave?"
+        />
+      </guards>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- WELL-DEFINED PAGE: Form Create                 -->
+    <!-- ============================================== -->
+    <page name="FormCreate" route="/forms/new" layout="@layout.AppShell" auth="required">
+      <data>
+        <query name="user" type="@entity.User" source="auth.currentUser" />
+        <query name="templates" source="api/form-templates" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <use component="@component.AppHeader" user="@state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <use component="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <container layout="stack" gap="xl" maxWidth="900px" margin="0 auto">
+
+          <container layout="stack" gap="sm">
+            <text variant="heading1">Create a New Form</text>
+            <text variant="body" muted="true">Start from scratch or choose a template</text>
+          </container>
+
+          <!-- Start from Scratch -->
+          <container
+            layout="row"
+            gap="lg"
+            padding="lg"
+            background="white"
+            borderRadius="md"
+            shadow="sm"
+            interactive="true"
+            onClick="createBlankForm"
+          >
+            <container
+              layout="center"
+              width="64px"
+              height="64px"
+              background="@theme.colors.primary.50"
+              borderRadius="md"
+            >
+              <icon name="plus" size="lg" color="@theme.colors.primary" />
+            </container>
+            <container layout="stack" gap="xs">
+              <text variant="subtitle" weight="medium">Blank Form</text>
+              <text variant="body" muted="true">Start with a blank canvas and add your own fields</text>
+            </container>
+          </container>
+
+          <!-- Templates -->
+          <section>
+            <text variant="heading2" marginBottom="md">Or start with a template</text>
+            <container layout="grid" columns="3" gap="md" responsive="{sm: 1, md: 2, lg: 3}">
+              <for each="template" in="@state.templates">
+                <container
+                  layout="stack"
+                  padding="lg"
+                  background="white"
+                  borderRadius="md"
+                  shadow="sm"
+                  interactive="true"
+                  onClick="createFromTemplate(@item.id)"
+                >
+                  <container
+                    layout="center"
+                    height="120px"
+                    background="@theme.colors.gray.50"
+                    borderRadius="md"
+                    marginBottom="md"
+                  >
+                    <icon name="@item.icon" size="xl" color="@theme.colors.muted" />
+                  </container>
+                  <text variant="subtitle" weight="medium">{@item.name}</text>
+                  <text variant="caption" muted="true">{@item.description}</text>
+                  <container layout="row" gap="sm" marginTop="sm">
+                    <tag>{@item.fieldCount} fields</tag>
+                    <tag>{@item.category}</tag>
+                  </container>
+                </container>
+              </for>
+            </container>
+          </section>
+
+        </container>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- PROMPT-GUIDED PAGE: Analytics                  -->
+    <!-- ============================================== -->
+    <page name="Analytics" route="/analytics" layout="@layout.AppShell" auth="required">
+      <data>
+        <query name="user" type="@entity.User" source="auth.currentUser" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <use component="@component.AppHeader" user="@state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <use component="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <prompt>
+          Create a comprehensive analytics dashboard for form submissions.
+
+          Header section:
+          - Page title "Analytics"
+          - Date range picker (preset options: Today, Last 7 days, Last 30 days, Custom)
+          - Form selector dropdown to filter by specific form or "All Forms"
+          - Export button (CSV, PDF options)
+
+          Stats row (4 cards):
+          - Total submissions (with trend vs previous period)
+          - Completion rate (started vs completed)
+          - Average completion time
+          - Unique visitors
+
+          Charts section (2x2 grid):
+          1. Line chart: Submissions over time (daily/weekly granularity toggle)
+          2. Bar chart: Submissions by form (top 10 forms)
+          3. Pie chart: Submissions by device type (desktop, mobile, tablet)
+          4. Funnel chart: Form completion funnel (viewed -> started -> completed)
+
+          Geographic section:
+          - World map showing submission locations
+          - Table with top countries/cities
+
+          Time analysis:
+          - Heatmap showing submissions by day of week and hour
+          - Insight text like "Most submissions happen on Tuesday at 2 PM"
+
+          Drop-off analysis:
+          - Table showing which fields have highest abandonment rate
+          - Recommendations for improvement
+
+          Make charts interactive with tooltips and click-to-drill-down.
+          Use consistent color scheme from theme.
+          Show loading skeletons while data loads.
+          Handle empty states gracefully.
+        </prompt>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- PROMPT-GUIDED PAGE: Submissions                -->
+    <!-- ============================================== -->
+    <page name="Submissions" route="/submissions" layout="@layout.AppShell" auth="required">
+      <data>
+        <query name="user" type="@entity.User" source="auth.currentUser" />
+        <query name="forms" type="@entity.Form[]" filter="owner == @state.user.id" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <use component="@component.AppHeader" user="@state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <use component="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <prompt>
+          Create an inbox-style submissions management page.
+
+          Layout: Split view with list on left (40%) and detail on right (60%)
+
+          Left panel - Submissions list:
+          - Filter bar: Form selector, Date range, Read/Unread, Spam filter
+          - Search box for searching submission content
+          - Bulk actions: Mark as read, Mark as spam, Delete, Export selected
+          - Submission list items showing:
+            - Form name
+            - First field value as preview
+            - Timestamp (relative)
+            - Unread indicator (blue dot)
+            - Spam indicator if flagged
+          - Infinite scroll pagination
+          - Click to select and view in detail panel
+
+          Right panel - Submission detail:
+          - Header with form name and submission date
+          - Action buttons: Reply (if email field exists), Mark as spam, Delete
+          - All submitted fields displayed as label-value pairs
+          - Metadata section (collapsible): IP address, User agent, Location, Referrer
+          - Navigation to previous/next submission
+
+          Empty state when no submission selected: "Select a submission to view details"
+
+          Keyboard navigation:
+          - Arrow up/down to navigate list
+          - Enter to select
+          - R to mark as read
+          - S to toggle spam
+          - Delete to delete
+        </prompt>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- PROMPT-GUIDED PAGE: Integrations               -->
+    <!-- ============================================== -->
+    <page name="Integrations" route="/integrations" layout="@layout.AppShell" auth="required">
+      <data>
+        <query name="user" type="@entity.User" source="auth.currentUser" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <use component="@component.AppHeader" user="@state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <use component="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <prompt>
+          Create an integrations marketplace page.
+
+          Header:
+          - Title "Integrations"
+          - Subtitle "Connect your forms with your favorite tools"
+          - Search box for filtering integrations
+
+          Categories (tabs or sidebar filter):
+          - All
+          - Email & Marketing (Mailchimp, ConvertKit, Drip)
+          - CRM (Salesforce, HubSpot, Pipedrive)
+          - Storage (Google Drive, Dropbox, OneDrive)
+          - Spreadsheets (Google Sheets, Airtable, Excel)
+          - Automation (Zapier, Make, n8n)
+          - Payments (Stripe, PayPal)
+          - Notifications (Slack, Discord, Teams)
+
+          Integration cards grid:
+          - App icon/logo
+          - App name
+          - Short description
+          - "Connected" badge if already connected
+          - "Pro" badge if requires paid plan
+          - Connect/Configure button
+
+          Connected integrations section at top:
+          - Show currently connected integrations
+          - Quick toggle to enable/disable
+          - Configure button
+          - Disconnect option
+
+          Clicking an integration opens a modal:
+          - Integration description
+          - Features list
+          - Setup instructions
+          - OAuth connect button or API key input
+          - Form selector to choose which forms to connect
+
+          Self-hosting section:
+          - Webhook configuration
+          - API documentation link
+          - Code examples for custom integrations
+        </prompt>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- PROMPT-GUIDED PAGE: Settings                   -->
+    <!-- ============================================== -->
+    <page name="Settings" route="/settings" layout="@layout.AppShell" auth="required">
+      <data>
+        <query name="user" type="@entity.User" source="auth.currentUser" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <use component="@component.AppHeader" user="@state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <use component="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <prompt>
+          Create a comprehensive settings page with sidebar navigation.
+
+          Layout: Settings nav on left, content on right
+
+          Settings sections:
+
+          1. Profile
+             - Avatar upload with crop
+             - Name, email fields
+             - Password change (current + new + confirm)
+             - Two-factor authentication toggle
+             - Connected accounts (Google, GitHub)
+
+          2. Workspace
+             - Workspace name
+             - Custom domain settings
+             - Default form settings
+             - Timezone selection
+             - Date/time format preferences
+
+          3. API Keys
+             - List of existing API keys (name, created date, last used, permissions)
+             - Create new key button
+             - Regenerate/delete options
+             - Copy key functionality
+             - Usage statistics per key
+
+          4. Self-Hosting
+             - Docker deployment instructions
+             - Environment variables reference
+             - Download configuration files
+             - Health check endpoint info
+             - Backup/restore instructions
+
+          5. Team (if applicable)
+             - Team members list
+             - Invite new member
+             - Role management (Admin, Editor, Viewer)
+             - Pending invitations
+
+          6. Notifications
+             - Email notification preferences
+             - Browser push notifications toggle
+             - Notification frequency (immediate, daily digest, weekly)
+
+          7. Danger Zone
+             - Export all data
+             - Delete account (with confirmation)
+
+          Each section should have a save button that only enables when changes are made.
+          Show success/error toasts on save.
+        </prompt>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- PROMPT-GUIDED PAGE: Billing                    -->
+    <!-- ============================================== -->
+    <page name="Billing" route="/billing" layout="@layout.AppShell" auth="required">
+      <data>
+        <query name="user" type="@entity.User" source="auth.currentUser" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <use component="@component.AppHeader" user="@state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <use component="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <prompt>
+          Create a billing management page.
+
+          Current plan card:
+          - Plan name and badge (Free, Pro, Enterprise)
+          - Price per month
+          - Renewal date (if paid)
+          - Usage stats: forms used/limit, submissions used/limit, storage used/limit
+          - Progress bars for usage
+          - Upgrade/Change plan button
+
+          Plan comparison (if on free plan):
+          - Feature comparison table
+          - Highlight current plan
+          - Upgrade CTAs
+
+          Payment method (if paid):
+          - Current card (last 4 digits, expiry)
+          - Update payment method button
+          - Add backup payment method
+
+          Billing history:
+          - Table with date, description, amount, status, invoice download
+          - Pagination
+
+          Billing information:
+          - Company name
+          - Billing address
+          - VAT/Tax ID
+          - Update button
+
+          Cancel subscription (if paid):
+          - Link to cancel with confirmation flow
+          - Show what they'll lose
+          - Offer alternatives (downgrade, pause)
+        </prompt>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- PROMPT-GUIDED PAGE: Pricing (Public)           -->
+    <!-- ============================================== -->
+    <page name="Pricing" route="/pricing" layout="@layout.MarketingLayout" auth="none">
+      <slot target="@layout.MarketingLayout.header">
+        <prompt>
+          Marketing site header with:
+          - Logo
+          - Nav links: Features, Pricing, Docs, Blog
+          - Sign in / Get Started buttons
+        </prompt>
+      </slot>
+
+      <slot target="@layout.MarketingLayout.content">
+        <prompt>
+          Create an attractive pricing page for the SaaS form builder.
+
+          Hero section:
+          - Headline: "Simple, transparent pricing"
+          - Subhead: "Start free, upgrade when you need more"
+          - Monthly/Annual toggle (show savings for annual)
+
+          Pricing cards (3 plans side by side):
+
+          1. Free Plan - $0/month
+             - 3 forms
+             - 100 submissions/month
+             - Basic fields
+             - Email notifications
+             - FormCraft branding
+             - Community support
+             - CTA: "Get Started Free"
+
+          2. Pro Plan - $29/month (or $24/month billed annually)
+             - Unlimited forms
+             - 10,000 submissions/month
+             - All field types
+             - Remove branding
+             - Custom thank you pages
+             - File uploads (1GB storage)
+             - Integrations (Zapier, Webhooks)
+             - Priority email support
+             - CTA: "Start Pro Trial" (14-day free)
+             - MOST POPULAR badge
+
+          3. Enterprise - Custom pricing
+             - Everything in Pro
+             - Unlimited submissions
+             - Unlimited storage
+             - Custom domain
+             - Self-hosting option
+             - SSO/SAML
+             - SLA guarantee
+             - Dedicated support
+             - CTA: "Contact Sales"
+
+          Feature comparison table below:
+          - Detailed feature breakdown
+          - Checkmarks and limits per plan
+          - Expandable sections for feature categories
+
+          FAQ section:
+          - Common billing questions
+          - Accordion style
+
+          Final CTA:
+          - "Ready to get started?"
+          - Sign up button
+
+          Use subtle animations on scroll.
+          Make pricing cards have hover effects.
+        </prompt>
+      </slot>
+
+      <slot target="@layout.MarketingLayout.footer">
+        <prompt>
+          Marketing footer with:
+          - Logo and tagline
+          - Link columns: Product, Resources, Company, Legal
+          - Social media links
+          - Copyright notice
+          - Made with love message
+        </prompt>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- MIXED PAGE: Public Form Renderer               -->
+    <!-- ============================================== -->
+    <page name="PublicForm" route="/f/:slug" layout="@layout.PublicFormLayout" auth="none">
+      <params>
+        <param name="slug" type="string" />
+      </params>
+      <data>
+        <query name="form" type="@entity.Form" filter="slug == @param.slug && status == 'published'" include="fields,settings" />
+      </data>
+
+      <slot target="@layout.PublicFormLayout.content">
+        <!-- Well-defined structure for the form container -->
+        <container background="white" borderRadius="lg" shadow="md" padding="xl">
+
+          <!-- Form Header - Well-defined -->
+          <container layout="stack" gap="sm" marginBottom="xl">
+            <text value="@state.form.name" variant="heading2" />
+            <if condition="@state.form.description">
+              <text value="@state.form.description" variant="body" muted="true" />
+            </if>
+          </container>
+
+          <!-- Form Fields - Prompt-guided rendering -->
+          <form onSubmit="submitForm" validation="true">
+            <container layout="stack" gap="lg">
+              <for each="field" in="@state.form.fields">
+                <prompt>
+                  Render the form field based on @item.type:
+
+                  - Use appropriate input component for each type
+                  - Show label with required indicator if needed
+                  - Show help text below the field
+                  - Apply validation rules from @item.validation
+                  - Handle conditional logic from @item.conditionalLogic
+                  - Support proper accessibility (labels, ARIA)
+
+                  For select/radio/checkbox: render options from @item.options
+                  For file upload: show drag-drop zone with file type restrictions
+                  For signature: show signature pad canvas
+                  For rating: show interactive star rating
+
+                  Style consistently with the form's theme.
+                </prompt>
+              </for>
+
+              <!-- Submit Button - Well-defined -->
+              <button type="submit" variant="primary" fullWidth="true" size="lg">
+                {@state.form.settings.submitButtonText || 'Submit'}
+              </button>
+            </container>
+          </form>
+
+          <!-- Branding - Well-defined but conditional -->
+          <if condition="@state.form.owner.plan == 'free'">
+            <container layout="center" marginTop="lg">
+              <link to="@page.Landing" external="true">
+                <text variant="caption" muted="true">Powered by FormCraft</text>
+              </link>
+            </container>
+          </if>
+
+        </container>
+      </slot>
+
+      <states>
+        <state name="loading">
+          <container background="white" borderRadius="lg" shadow="md" padding="xl">
+            <prompt>Form loading skeleton with field placeholders</prompt>
+          </container>
+        </state>
+
+        <state name="submitted">
+          <container background="white" borderRadius="lg" shadow="md" padding="xl" layout="center">
+            <container layout="stack" align="center" gap="md">
+              <container
+                layout="center"
+                width="64px"
+                height="64px"
+                borderRadius="full"
+                background="@theme.colors.success.50"
+              >
+                <icon name="check" size="lg" color="@theme.colors.success" />
+              </container>
+              <text variant="heading2">Thank you!</text>
+              <text variant="body" muted="true" align="center">
+                {@state.form.settings.successMessage || 'Your response has been recorded.'}
+              </text>
+              <if condition="@state.form.settings.allowMultipleSubmissions">
+                <button variant="outline" onClick="resetForm">Submit another response</button>
+              </if>
+            </container>
+          </container>
+        </state>
+
+        <state name="closed">
+          <container background="white" borderRadius="lg" shadow="md" padding="xl" layout="center">
+            <container layout="stack" align="center" gap="md">
+              <icon name="lock" size="xl" color="@theme.colors.muted" />
+              <text variant="heading2">Form Closed</text>
+              <text variant="body" muted="true">This form is no longer accepting responses.</text>
+            </container>
+          </container>
+        </state>
+
+        <state name="notFound">
+          <container background="white" borderRadius="lg" shadow="md" padding="xl" layout="center">
+            <container layout="stack" align="center" gap="md">
+              <icon name="file-x" size="xl" color="@theme.colors.muted" />
+              <text variant="heading2">Form Not Found</text>
+              <text variant="body" muted="true">This form doesn't exist or has been deleted.</text>
+            </container>
+          </container>
+        </state>
+      </states>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- WELL-DEFINED PAGE: Login                       -->
+    <!-- ============================================== -->
+    <page name="Login" route="/login" layout="@layout.AuthLayout" auth="guest">
+      <slot target="@layout.AuthLayout.branding">
+        <container layout="center" height="100%" padding="xl">
+          <container layout="stack" align="center" gap="lg">
+            <image src="@asset.images.logoWhite" height="48px" />
+            <text variant="heading1" color="white">Build forms that convert</text>
+            <text variant="body" color="white" opacity="0.8" align="center" maxWidth="400px">
+              Create beautiful, responsive forms in minutes. No coding required.
+            </text>
+          </container>
+        </container>
+      </slot>
+
+      <slot target="@layout.AuthLayout.content">
+        <container layout="stack" gap="lg">
+          <container layout="stack" gap="xs">
+            <text variant="heading2">Welcome back</text>
+            <text variant="body" muted="true">Sign in to your account</text>
+          </container>
+
+          <form onSubmit="login">
+            <container layout="stack" gap="md">
+              <field
+                name="email"
+                type="email"
+                label="Email"
+                placeholder="you@example.com"
+                required="true"
+                autoFocus="true"
+              />
+              <field
+                name="password"
+                type="password"
+                label="Password"
+                required="true"
+              >
+                <suffix>
+                  <link to="@page.ForgotPassword" variant="caption">Forgot?</link>
+                </suffix>
+              </field>
+              <button type="submit" variant="primary" fullWidth="true">
+                Sign In
+              </button>
+            </container>
+          </form>
+
+          <divider label="or continue with" />
+
+          <container layout="row" gap="md">
+            <button variant="outline" fullWidth="true" icon="google" onClick="loginWithGoogle">
+              Google
+            </button>
+            <button variant="outline" fullWidth="true" icon="github" onClick="loginWithGitHub">
+              GitHub
+            </button>
+          </container>
+
+          <text variant="body" align="center">
+            Don't have an account? <link to="@page.Register">Sign up free</link>
+          </text>
+        </container>
+      </slot>
+
+      <states>
+        <state name="loading">
+          <overlay>
+            <spinner label="Signing in..." />
+          </overlay>
+        </state>
+        <state name="error" bind="@state.error">
+          <alert variant="error" dismissible="true">{@state.error.message}</alert>
+        </state>
+      </states>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- PROMPT-GUIDED PAGE: Register                   -->
+    <!-- ============================================== -->
+    <page name="Register" route="/register" layout="@layout.AuthLayout" auth="guest">
+      <slot target="@layout.AuthLayout.branding">
+        <container layout="center" height="100%" padding="xl">
+          <container layout="stack" align="center" gap="lg">
+            <image src="@asset.images.logoWhite" height="48px" />
+            <text variant="heading1" color="white">Start free today</text>
+            <container layout="stack" gap="sm" align="start">
+              <container layout="row" gap="sm" align="center">
+                <icon name="check" color="white" />
+                <text color="white">No credit card required</text>
+              </container>
+              <container layout="row" gap="sm" align="center">
+                <icon name="check" color="white" />
+                <text color="white">3 forms free forever</text>
+              </container>
+              <container layout="row" gap="sm" align="center">
+                <icon name="check" color="white" />
+                <text color="white">100 submissions/month</text>
+              </container>
+            </container>
+          </container>
+        </container>
+      </slot>
+
+      <slot target="@layout.AuthLayout.content">
+        <prompt>
+          Create a registration form with:
+
+          Header:
+          - "Create your account" heading
+          - "Get started in seconds" subtext
+
+          Form fields:
+          - Full name (required)
+          - Email (required, validated)
+          - Password (required, with strength indicator)
+          - Show password toggle
+          - Terms acceptance checkbox with links to Terms and Privacy Policy
+
+          Submit button: "Create Account"
+
+          Social signup options:
+          - Google
+          - GitHub
+
+          Footer text: "Already have an account? Sign in"
+
+          Password requirements (show inline):
+          - At least 8 characters
+          - One uppercase letter
+          - One number
+
+          Show loading state on submit.
+          Handle errors gracefully.
+        </prompt>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- PROMPT-GUIDED PAGE: Landing (Marketing)        -->
+    <!-- ============================================== -->
+    <page name="Landing" route="/" layout="@layout.MarketingLayout" auth="none">
+      <slot target="@layout.MarketingLayout.header">
+        <prompt>
+          Marketing header with:
+          - Logo on left
+          - Navigation: Features, Pricing, Docs, Blog
+          - Right side: Sign In button, "Get Started Free" primary button
+          - Sticky on scroll with blur background
+        </prompt>
+      </slot>
+
+      <slot target="@layout.MarketingLayout.content">
+        <prompt>
+          Create a compelling landing page for FormCraft - a SaaS form builder.
+
+          Hero section:
+          - Large headline: "Build beautiful forms in minutes"
+          - Subheadline: "Create, share, and analyze forms without writing code. Self-host or use our cloud."
+          - Email capture input with "Get Started Free" button
+          - "No credit card required" note
+          - Hero image/illustration showing the form builder interface
+          - Social proof: "Trusted by 10,000+ businesses"
+          - Logo cloud of customer logos
+
+          Features section (3 columns):
+          1. "Drag & Drop Builder" - Visual editor, no coding
+          2. "Smart Integrations" - Connect to 100+ apps
+          3. "Self-Host Option" - Own your data, deploy anywhere
+
+          How it works (3 steps):
+          1. Create - Design your form with drag and drop
+          2. Share - Get a link or embed on your site
+          3. Analyze - View responses and insights
+
+          Form types showcase:
+          - Contact forms
+          - Surveys
+          - Registration forms
+          - Order forms
+          - Job applications
+          Show example screenshots/mockups
+
+          Testimonials section:
+          - 3 customer quotes with photos, names, companies
+          - Star ratings
+
+          Self-hosting section:
+          - "Own your data" headline
+          - Docker deployment mention
+          - One-click cloud deploy options
+          - "Deploy in 5 minutes" CTA
+
+          Final CTA section:
+          - "Ready to build better forms?"
+          - Large "Start Free" button
+          - "14-day Pro trial included"
+
+          Use animations on scroll.
+          Make it visually impressive with gradients and illustrations.
+          Fully responsive design.
+        </prompt>
+      </slot>
+
+      <slot target="@layout.MarketingLayout.footer">
+        <prompt>
+          Comprehensive footer with:
+
+          4 columns:
+          1. Product: Features, Pricing, Templates, What's New
+          2. Resources: Documentation, API Reference, Guides, Blog
+          3. Company: About, Careers, Contact, Press Kit
+          4. Legal: Terms of Service, Privacy Policy, Cookie Policy, GDPR
+
+          Bottom bar:
+          - Copyright notice
+          - Social links: Twitter, GitHub, Discord, YouTube
+          - Language/region selector
+        </prompt>
+      </slot>
+    </page>
+
+  </pages>
+
+
+  <!-- ==================== NAVIGATION ==================== -->
+  <navigation>
+    <guards>
+      <guard name="required" redirect="@page.Login" message="Please sign in to continue" />
+      <guard name="guest" redirect="@page.Dashboard" />
+      <guard name="admin" role="admin" redirect="@page.Dashboard" />
+    </guards>
+
+    <flows>
+      <flow name="onboarding">
+        <prompt>
+          Multi-step onboarding flow for new users:
+          1. Welcome screen with value props
+          2. "What will you use forms for?" - multiple choice
+          3. Create first form (template selection or blank)
+          4. Quick tutorial tooltip tour
+          5. Completion celebration
+        </prompt>
+      </flow>
+    </flows>
+  </navigation>
+
+
+  <!-- ==================== CONFIG ==================== -->
+  <config>
+    <theme>
+      <colors>
+        <primary>#6366F1</primary>
+        <secondary>#8B5CF6</secondary>
+        <success>#10B981</success>
+        <warning>#F59E0B</warning>
+        <danger>#EF4444</danger>
+        <muted>#6B7280</muted>
+        <gray>
+          <50>#F9FAFB</50>
+          <100>#F3F4F6</100>
+          <200>#E5E7EB</200>
+          <300>#D1D5DB</300>
+          <400>#9CA3AF</400>
+          <500>#6B7280</500>
+          <600>#4B5563</600>
+          <700>#374151</700>
+          <800>#1F2937</800>
+          <900>#111827</900>
+        </gray>
+      </colors>
+      <spacing unit="4px" />
+      <borderRadius default="8px" />
+      <shadows>
+        <sm>0 1px 2px rgba(0,0,0,0.05)</sm>
+        <md>0 4px 6px rgba(0,0,0,0.1)</md>
+        <lg>0 10px 15px rgba(0,0,0,0.1)</lg>
+      </shadows>
+    </theme>
+
+    <i18n default="en">
+      <locale name="en" src="./locales/en.json" />
+      <locale name="es" src="./locales/es.json" />
+      <locale name="de" src="./locales/de.json" />
+    </i18n>
+
+    <assets>
+      <images>
+        <logo src="/assets/logo.svg" />
+        <logoWhite src="/assets/logo-white.svg" />
+        <favicon src="/assets/favicon.ico" />
+      </images>
+    </assets>
+
+    <llm>
+      <prompt type="global">
+        Generate clean, accessible, production-ready React code.
+        Use Tailwind CSS for styling.
+        Follow the design system tokens.
+        Ensure WCAG 2.1 AA compliance.
+        Use semantic HTML elements.
+        Support keyboard navigation.
+        Add proper loading and error states.
+        Use React Query for data fetching.
+        Use React Hook Form for form handling.
+      </prompt>
+      <prompt type="components">
+        Create reusable components with TypeScript interfaces.
+        Use forwardRef for interactive components.
+        Support className prop for customization.
+        Include JSDoc comments for props.
+      </prompt>
+    </llm>
+  </config>
+
+</webapp>

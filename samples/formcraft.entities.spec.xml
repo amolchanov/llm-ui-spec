@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<spec type="entities" webapp="FormCraft">
+
+  <entity name="User">
+    <field name="id" type="uuid" />
+    <field name="email" type="email" required="true" />
+    <field name="name" type="string" required="true" />
+    <field name="avatar" type="image" />
+    <field name="plan" type="enum" values="free,pro,enterprise" default="free" />
+    <field name="createdAt" type="datetime" />
+    <field name="forms" type="ref" ref="@entity.Form" cardinality="many" />
+    <field name="apiKeys" type="ref" ref="@entity.ApiKey" cardinality="many" />
+  </entity>
+
+  <entity name="Form">
+    <field name="id" type="uuid" />
+    <field name="name" type="string" required="true" />
+    <field name="description" type="text" />
+    <field name="slug" type="string" unique="true" />
+    <field name="fields" type="ref" ref="@entity.FormField" cardinality="many" ordered="true" />
+    <field name="settings" type="ref" ref="@entity.FormSettings" cardinality="one" />
+    <field name="owner" type="ref" ref="@entity.User" cardinality="one" />
+    <field name="submissions" type="ref" ref="@entity.Submission" cardinality="many" />
+    <field name="status" type="enum" values="draft,published,archived" default="draft" />
+    <field name="createdAt" type="datetime" />
+    <field name="updatedAt" type="datetime" />
+    <field name="publishedAt" type="datetime" />
+  </entity>
+
+  <entity name="FormField">
+    <field name="id" type="uuid" />
+    <field name="type" type="enum" values="text,email,number,phone,textarea,select,radio,checkbox,date,time,file,signature,rating,hidden" />
+    <field name="label" type="string" required="true" />
+    <field name="placeholder" type="string" />
+    <field name="helpText" type="string" />
+    <field name="required" type="boolean" default="false" />
+    <field name="validation" type="json" />
+    <field name="options" type="json" />
+    <field name="conditionalLogic" type="json" />
+    <field name="order" type="integer" />
+  </entity>
+
+  <entity name="FormSettings">
+    <field name="id" type="uuid" />
+    <field name="submitButtonText" type="string" default="Submit" />
+    <field name="successMessage" type="text" />
+    <field name="redirectUrl" type="url" />
+    <field name="notifyEmail" type="email" />
+    <field name="enableCaptcha" type="boolean" default="false" />
+    <field name="allowMultipleSubmissions" type="boolean" default="true" />
+    <field name="closeAfterDate" type="datetime" />
+    <field name="maxSubmissions" type="integer" />
+    <field name="customCss" type="text" />
+    <field name="webhookUrl" type="url" />
+  </entity>
+
+  <entity name="Submission">
+    <field name="id" type="uuid" />
+    <field name="form" type="ref" ref="@entity.Form" />
+    <field name="data" type="json" />
+    <field name="metadata" type="json" />
+    <field name="ipAddress" type="string" />
+    <field name="userAgent" type="string" />
+    <field name="createdAt" type="datetime" />
+    <field name="isRead" type="boolean" default="false" />
+    <field name="isSpam" type="boolean" default="false" />
+  </entity>
+
+  <entity name="ApiKey">
+    <field name="id" type="uuid" />
+    <field name="name" type="string" required="true" />
+    <field name="key" type="string" />
+    <field name="permissions" type="enum" values="read,write,admin" />
+    <field name="lastUsedAt" type="datetime" />
+    <field name="createdAt" type="datetime" />
+  </entity>
+
+</spec>

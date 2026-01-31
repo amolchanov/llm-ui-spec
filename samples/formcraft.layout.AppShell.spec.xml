@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<spec type="layout" webapp="FormCraft">
+  <layout name="AppShell">
+    <container layout="column" minHeight="100vh">
+      <slot name="header" position="top" sticky="true" height="64px" role="chrome" />
+      <container layout="row" grow="true">
+        <slot name="sidebar" width="240px" collapsible="true" breakpoint="md" role="chrome" />
+        <slot name="content" grow="true" scroll="true" padding="lg" role="content" />
+      </container>
+    </container>
+  </layout>
+</spec>
