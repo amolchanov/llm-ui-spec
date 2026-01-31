@@ -1,0 +1,837 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  FormCraft - Desktop Application Spec
+
+  Uses desktop-native patterns:
+  - Menu bar with keyboard shortcuts
+  - Multi-window support
+  - Toolbar with actions
+  - Sidebar navigation with collapsible sections
+  - Context menus (right-click)
+  - Resizable panels and split views
+  - Status bar
+  - Dialog boxes and modals
+  - Drag and drop
+  - System tray integration
+-->
+<webapp name="FormCraft" version="1.0">
+
+  <import src="./formcraft.shared.spec.xml" />
+
+
+  <!-- ==================== APP CONFIGURATION ==================== -->
+  <config>
+    <window
+      title="FormCraft"
+      width="1200"
+      height="800"
+      minWidth="800"
+      minHeight="600"
+      titleBarStyle="hidden"
+    />
+    <tray icon="form-icon" tooltip="FormCraft" />
+  </config>
+
+
+  <!-- ==================== MENU BAR ==================== -->
+  <menuBar>
+    <menu label="File">
+      <menuItem label="New Form" shortcut="Ctrl+N" onClick="openDialog(@dialog.CreateForm)" />
+      <menuItem label="Open..." shortcut="Ctrl+O" onClick="@action.openFilePicker" />
+      <separator />
+      <menuItem label="Import" submenu="true">
+        <menuItem label="From JSON" onClick="@action.importJSON" />
+        <menuItem label="From CSV" onClick="@action.importCSV" />
+        <menuItem label="From Google Forms" onClick="@action.importGoogleForms" />
+      </menuItem>
+      <menuItem label="Export" submenu="true">
+        <menuItem label="As JSON" onClick="@action.exportJSON" />
+        <menuItem label="As PDF" onClick="@action.exportPDF" />
+      </menuItem>
+      <separator />
+      <menuItem label="Settings" shortcut="Ctrl+," onClick="openWindow(@window.Settings)" />
+      <separator />
+      <menuItem label="Exit" shortcut="Alt+F4" onClick="@action.quit" />
+    </menu>
+
+    <menu label="Edit">
+      <menuItem label="Undo" shortcut="Ctrl+Z" onClick="@action.undo" enabled="@state.canUndo" />
+      <menuItem label="Redo" shortcut="Ctrl+Shift+Z" onClick="@action.redo" enabled="@state.canRedo" />
+      <separator />
+      <menuItem label="Cut" shortcut="Ctrl+X" onClick="@action.cut" />
+      <menuItem label="Copy" shortcut="Ctrl+C" onClick="@action.copy" />
+      <menuItem label="Paste" shortcut="Ctrl+V" onClick="@action.paste" />
+      <menuItem label="Delete" shortcut="Delete" onClick="@action.delete" />
+      <separator />
+      <menuItem label="Select All" shortcut="Ctrl+A" onClick="@action.selectAll" />
+      <menuItem label="Duplicate" shortcut="Ctrl+D" onClick="@action.duplicate" />
+    </menu>
+
+    <menu label="View">
+      <menuItem label="Toggle Sidebar" shortcut="Ctrl+B" onClick="@action.toggleSidebar" checked="@state.sidebarVisible" />
+      <menuItem label="Toggle Properties" shortcut="Ctrl+P" onClick="@action.toggleProperties" checked="@state.propertiesVisible" />
+      <separator />
+      <menuItem label="Zoom In" shortcut="Ctrl+=" onClick="@action.zoomIn" />
+      <menuItem label="Zoom Out" shortcut="Ctrl+-" onClick="@action.zoomOut" />
+      <menuItem label="Reset Zoom" shortcut="Ctrl+0" onClick="@action.zoomReset" />
+      <separator />
+      <menuItem label="Full Screen" shortcut="F11" onClick="@action.toggleFullScreen" />
+    </menu>
+
+    <menu label="Form">
+      <menuItem label="Add Field" shortcut="Ctrl+Shift+F" onClick="openDialog(@dialog.AddField)" />
+      <menuItem label="Preview" shortcut="Ctrl+Shift+P" onClick="openWindow(@window.Preview)" />
+      <separator />
+      <menuItem label="Publish" shortcut="Ctrl+Shift+Enter" onClick="@action.publish" enabled="@state.canPublish" />
+      <menuItem label="Unpublish" onClick="@action.unpublish" enabled="@state.form.status == 'published'" />
+      <separator />
+      <menuItem label="Form Settings..." onClick="openDialog(@dialog.FormSettings)" />
+    </menu>
+
+    <menu label="Help">
+      <menuItem label="Documentation" shortcut="F1" onClick="@action.openDocs" />
+      <menuItem label="Keyboard Shortcuts" shortcut="Ctrl+/" onClick="openDialog(@dialog.Shortcuts)" />
+      <separator />
+      <menuItem label="Check for Updates..." onClick="@action.checkUpdates" />
+      <menuItem label="About FormCraft" onClick="openDialog(@dialog.About)" />
+    </menu>
+  </menuBar>
+
+
+  <!-- ==================== MAIN LAYOUT ==================== -->
+  <layout name="MainLayout">
+    <column height="100%">
+      <!-- Custom Title Bar (for frameless window) -->
+      <titleBar draggable="true">
+        <row padding="sm" gap="md" align="center">
+          <icon name="form" size="sm" />
+          <text variant="body" weight="medium">FormCraft</text>
+          <spacer />
+          <windowControls />
+        </row>
+      </titleBar>
+
+      <!-- Toolbar -->
+      <toolbar>
+        <toolbarGroup>
+          <toolbarButton icon="plus" tooltip="New Form (Ctrl+N)" onClick="openDialog(@dialog.CreateForm)" />
+          <toolbarButton icon="folder-open" tooltip="Open (Ctrl+O)" onClick="@action.openFilePicker" />
+          <toolbarButton icon="save" tooltip="Save (Ctrl+S)" onClick="@action.save" disabled="!@state.isDirty" />
+        </toolbarGroup>
+        <toolbarSeparator />
+        <toolbarGroup>
+          <toolbarButton icon="undo" tooltip="Undo (Ctrl+Z)" onClick="@action.undo" disabled="!@state.canUndo" />
+          <toolbarButton icon="redo" tooltip="Redo (Ctrl+Shift+Z)" onClick="@action.redo" disabled="!@state.canRedo" />
+        </toolbarGroup>
+        <toolbarSeparator />
+        <toolbarGroup>
+          <toolbarButton icon="eye" tooltip="Preview (Ctrl+Shift+P)" onClick="openWindow(@window.Preview)" />
+          <toolbarButton icon="share-2" tooltip="Share" onClick="openDialog(@dialog.Share)" disabled="@state.form.status != 'published'" />
+        </toolbarGroup>
+        <spacer />
+        <search placeholder="Search forms..." width="250px" onSearch="@action.search" />
+      </toolbar>
+
+      <!-- Main Content Area -->
+      <splitView direction="horizontal" grow="true">
+        <!-- Sidebar -->
+        <panel name="sidebar" width="260px" minWidth="200px" maxWidth="400px" resizable="true" collapsible="true">
+          <column height="100%" background="@theme.colors.gray.50">
+            <!-- Navigation -->
+            <treeView>
+              <treeItem icon="home" label="Dashboard" selected="@state.view == 'dashboard'" onClick="@action.setView('dashboard')" />
+              <treeItem icon="file-text" label="Forms" expanded="true">
+                <for each="form" in="@state.forms">
+                  <treeItem
+                    icon="file"
+                    label="@item.name"
+                    selected="@state.selectedForm == @item.id"
+                    onClick="@action.selectForm(@item.id)"
+                    contextMenu="@contextMenu.FormItem"
+                  />
+                </for>
+              </treeItem>
+              <treeItem icon="inbox" label="Submissions" badge="@state.unreadCount" onClick="@action.setView('submissions')" />
+              <treeItem icon="bar-chart-2" label="Analytics" onClick="@action.setView('analytics')" />
+            </treeView>
+
+            <spacer />
+
+            <!-- User Section -->
+            <container padding="md" borderTop="true">
+              <row gap="sm" align="center">
+                <use component="Avatar" src="@state.user.avatar" name="@state.user.name" size="sm" />
+                <column grow="true">
+                  <text variant="body" weight="medium" truncate="true" value="@state.user.name" />
+                  <text variant="caption" muted="true" value="@state.user.plan" />
+                </column>
+                <button icon="settings" variant="ghost" size="sm" onClick="openWindow(@window.Settings)" />
+              </row>
+            </container>
+          </column>
+        </panel>
+
+        <!-- Main Content -->
+        <panel grow="true">
+          <slot name="content" />
+        </panel>
+
+        <!-- Properties Panel -->
+        <panel name="properties" width="300px" minWidth="250px" maxWidth="450px" resizable="true" collapsible="true" visible="@state.propertiesVisible">
+          <slot name="properties" />
+        </panel>
+      </splitView>
+
+      <!-- Status Bar -->
+      <statusBar>
+        <statusBarItem>
+          <text variant="caption" value="@state.form.fields.length" /> fields
+        </statusBarItem>
+        <statusBarItem>
+          <text variant="caption" value="@state.form.submissions.length" /> submissions
+        </statusBarItem>
+        <spacer />
+        <statusBarItem>
+          <badge value="@state.form.status" size="xs" />
+        </statusBarItem>
+        <statusBarItem>
+          <if condition="@state.isDirty">
+            <text variant="caption" muted="true">Unsaved changes</text>
+          </if>
+          <else>
+            <text variant="caption" muted="true">Saved</text>
+          </else>
+        </statusBarItem>
+      </statusBar>
+    </column>
+  </layout>
+
+
+  <!-- ==================== VIEWS ==================== -->
+  <views>
+
+    <!-- Dashboard View -->
+    <view name="Dashboard">
+      <data>
+        <query name="forms" type="@entity.Form[]" filter="owner == @auth.user" orderBy="updatedAt desc" limit="10" />
+        <query name="stats" source="api/analytics/overview" />
+      </data>
+
+      <scroll padding="lg">
+        <column gap="lg" maxWidth="1200px">
+          <text variant="heading1">Dashboard</text>
+
+          <!-- Stats Row -->
+          <container layout="grid" columns="4" gap="md">
+            <use component="StatCard" label="Total Forms" value="@state.stats.totalForms" icon="file-text" />
+            <use component="StatCard" label="Submissions" value="@state.stats.totalSubmissions" icon="inbox" trend="@state.stats.submissionsTrend" trendLabel="vs last week" />
+            <use component="StatCard" label="Completion Rate" value="@state.stats.completionRate" icon="check-circle" />
+            <use component="StatCard" label="Active Forms" value="@state.stats.activeForms" icon="activity" />
+          </container>
+
+          <!-- Recent Forms -->
+          <section>
+            <row justify="between" align="center" marginBottom="md">
+              <text variant="heading2">Recent Forms</text>
+              <button variant="text" onClick="@action.setView('forms')">View All</button>
+            </row>
+
+            <container layout="grid" columns="3" gap="md">
+              <for each="form" in="@state.forms | limit(6)">
+                <use
+                  component="FormCard"
+                  form="@item"
+                  onClick="@action.selectForm(@item.id)"
+                  onDoubleClick="openWindow(@window.FormEditor, { id: @item.id })"
+                  contextMenu="@contextMenu.FormItem"
+                />
+              </for>
+            </container>
+          </section>
+
+          <!-- Recent Activity -->
+          <section>
+            <text variant="heading2" marginBottom="md">Recent Submissions</text>
+            <container variant="card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Form</th>
+                    <th>Response</th>
+                    <th>Date</th>
+                    <th width="50px"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <for each="submission" in="@state.recentSubmissions">
+                    <tr interactive="true" onDoubleClick="openDialog(@dialog.SubmissionDetail, { id: @item.id })">
+                      <td>
+                        <row gap="sm" align="center">
+                          <if condition="!@item.isRead">
+                            <container width="8px" height="8px" borderRadius="full" background="@theme.colors.primary" />
+                          </if>
+                          <text value="@item.form.name" />
+                        </row>
+                      </td>
+                      <td><text value="{summarize(@item.data, 50)}" muted="true" /></td>
+                      <td><text value="@item.createdAt" format="relative" muted="true" /></td>
+                      <td>
+                        <button icon="more-horizontal" variant="ghost" size="sm" onClick="showContextMenu(@contextMenu.Submission, @item)" />
+                      </td>
+                    </tr>
+                  </for>
+                </tbody>
+              </table>
+            </container>
+          </section>
+        </column>
+      </scroll>
+    </view>
+
+
+    <!-- Form Editor View -->
+    <view name="FormEditor">
+      <params>
+        <param name="id" type="uuid" required="true" />
+      </params>
+      <data>
+        <query name="form" type="@entity.Form" filter="id == @param.id" include="fields,settings" />
+      </data>
+
+      <slot name="content">
+        <splitView direction="horizontal">
+          <!-- Field Palette -->
+          <panel width="220px" borderRight="true">
+            <column padding="md" gap="sm">
+              <text variant="subtitle" marginBottom="sm">Add Field</text>
+
+              <text variant="caption" muted="true" marginTop="sm">Basic</text>
+              <draggable type="field" data="{ type: 'text' }">
+                <container variant="outline" padding="sm" interactive="true">
+                  <row gap="sm" align="center">
+                    <icon name="type" size="sm" />
+                    <text variant="body">Text</text>
+                  </row>
+                </container>
+              </draggable>
+              <draggable type="field" data="{ type: 'email' }">
+                <container variant="outline" padding="sm" interactive="true">
+                  <row gap="sm" align="center">
+                    <icon name="mail" size="sm" />
+                    <text variant="body">Email</text>
+                  </row>
+                </container>
+              </draggable>
+              <draggable type="field" data="{ type: 'number' }">
+                <container variant="outline" padding="sm" interactive="true">
+                  <row gap="sm" align="center">
+                    <icon name="hash" size="sm" />
+                    <text variant="body">Number</text>
+                  </row>
+                </container>
+              </draggable>
+              <draggable type="field" data="{ type: 'textarea' }">
+                <container variant="outline" padding="sm" interactive="true">
+                  <row gap="sm" align="center">
+                    <icon name="align-left" size="sm" />
+                    <text variant="body">Long Text</text>
+                  </row>
+                </container>
+              </draggable>
+
+              <text variant="caption" muted="true" marginTop="sm">Choice</text>
+              <draggable type="field" data="{ type: 'select' }">
+                <container variant="outline" padding="sm" interactive="true">
+                  <row gap="sm" align="center">
+                    <icon name="chevron-down" size="sm" />
+                    <text variant="body">Dropdown</text>
+                  </row>
+                </container>
+              </draggable>
+              <draggable type="field" data="{ type: 'radio' }">
+                <container variant="outline" padding="sm" interactive="true">
+                  <row gap="sm" align="center">
+                    <icon name="circle" size="sm" />
+                    <text variant="body">Radio</text>
+                  </row>
+                </container>
+              </draggable>
+              <draggable type="field" data="{ type: 'checkbox' }">
+                <container variant="outline" padding="sm" interactive="true">
+                  <row gap="sm" align="center">
+                    <icon name="check-square" size="sm" />
+                    <text variant="body">Checkbox</text>
+                  </row>
+                </container>
+              </draggable>
+
+              <text variant="caption" muted="true" marginTop="sm">Advanced</text>
+              <draggable type="field" data="{ type: 'date' }">
+                <container variant="outline" padding="sm" interactive="true">
+                  <row gap="sm" align="center">
+                    <icon name="calendar" size="sm" />
+                    <text variant="body">Date</text>
+                  </row>
+                </container>
+              </draggable>
+              <draggable type="field" data="{ type: 'file' }">
+                <container variant="outline" padding="sm" interactive="true">
+                  <row gap="sm" align="center">
+                    <icon name="upload" size="sm" />
+                    <text variant="body">File Upload</text>
+                  </row>
+                </container>
+              </draggable>
+              <draggable type="field" data="{ type: 'rating' }">
+                <container variant="outline" padding="sm" interactive="true">
+                  <row gap="sm" align="center">
+                    <icon name="star" size="sm" />
+                    <text variant="body">Rating</text>
+                  </row>
+                </container>
+              </draggable>
+            </column>
+          </panel>
+
+          <!-- Form Canvas -->
+          <panel grow="true">
+            <scroll padding="lg">
+              <column maxWidth="600px" margin="auto" gap="md">
+                <!-- Form Header -->
+                <input
+                  value="@state.form.name"
+                  variant="ghost"
+                  size="xl"
+                  placeholder="Form Title"
+                  onChange="@action.updateFormName"
+                />
+                <input
+                  value="@state.form.description"
+                  variant="ghost"
+                  placeholder="Add a description..."
+                  onChange="@action.updateFormDescription"
+                />
+
+                <!-- Fields -->
+                <dropZone accept="field" onDrop="@action.addFieldAt">
+                  <for each="field" in="@state.form.fields">
+                    <draggable type="field" data="@item" reorderable="true">
+                      <container
+                        variant="card"
+                        padding="md"
+                        selected="@state.selectedField == @item.id"
+                        onClick="@action.selectField(@item.id)"
+                        onDoubleClick="focusPropertiesPanel()"
+                        contextMenu="@contextMenu.Field"
+                      >
+                        <column gap="sm">
+                          <row gap="xs" align="center">
+                            <text value="@item.label" variant="body" weight="medium" />
+                            <if condition="@item.required">
+                              <text value="*" color="@theme.colors.danger" />
+                            </if>
+                          </row>
+                          <prompt>Render appropriate field preview based on @item.type</prompt>
+                        </column>
+                      </container>
+                    </draggable>
+                  </for>
+                </dropZone>
+
+                <!-- Empty State -->
+                <if condition="@state.form.fields.length == 0">
+                  <container padding="xl" borderStyle="dashed" borderRadius="md" align="center">
+                    <column align="center" gap="md">
+                      <icon name="plus-circle" size="xl" color="@theme.colors.muted" />
+                      <text variant="body" muted="true">Drag fields here or click to add</text>
+                      <button variant="outline" onClick="openDialog(@dialog.AddField)">Add Field</button>
+                    </column>
+                  </container>
+                </if>
+              </column>
+            </scroll>
+          </panel>
+        </splitView>
+      </slot>
+
+      <!-- Properties Panel -->
+      <slot name="properties">
+        <if condition="@state.selectedField">
+          <column padding="md" gap="md">
+            <row justify="between" align="center">
+              <text variant="subtitle">Field Properties</text>
+              <button icon="x" variant="ghost" size="sm" onClick="@action.selectField(null)" />
+            </row>
+
+            <form bind="@state.selectedFieldData" onChange="@action.updateField">
+              <column gap="md">
+                <input label="Label" bind="label" required="true" />
+                <input label="Placeholder" bind="placeholder" />
+                <textarea label="Help Text" bind="helpText" rows="2" />
+                <switch label="Required" bind="required" />
+
+                <if condition="@state.selectedFieldData.type in ['select', 'radio', 'checkbox']">
+                  <column gap="sm">
+                    <text variant="caption">Options</text>
+                    <for each="option" in="@state.selectedFieldData.options">
+                      <row gap="sm">
+                        <input value="@item" grow="true" onChange="@action.updateOption(@index, @value)" />
+                        <button icon="x" variant="ghost" size="sm" onClick="@action.removeOption(@index)" />
+                      </row>
+                    </for>
+                    <button variant="outline" size="sm" icon="plus" onClick="@action.addOption">Add Option</button>
+                  </column>
+                </if>
+
+                <divider />
+                <button variant="outline" color="danger" icon="trash" onClick="@action.deleteField">Delete Field</button>
+              </column>
+            </form>
+          </column>
+        </if>
+        <else>
+          <column padding="md" align="center" justify="center" height="100%">
+            <text variant="body" muted="true">Select a field to edit properties</text>
+          </column>
+        </else>
+      </slot>
+    </view>
+
+
+    <!-- Submissions View -->
+    <view name="Submissions">
+      <data>
+        <query name="submissions" type="@entity.Submission[]" filter="form.owner == @auth.user" orderBy="createdAt desc" />
+      </data>
+      <localState>
+        <state name="filter" type="string" default="all" />
+        <state name="selectedForm" type="uuid" />
+      </localState>
+
+      <column padding="lg" gap="md">
+        <row justify="between" align="center">
+          <text variant="heading1">Submissions</text>
+          <row gap="md">
+            <select value="@state.selectedForm" onChange="@action.setFormFilter" placeholder="All Forms">
+              <option value="">All Forms</option>
+              <for each="form" in="@state.forms">
+                <option value="@item.id" label="@item.name" />
+              </for>
+            </select>
+            <button icon="download" variant="outline" onClick="@action.exportSubmissions">Export</button>
+          </row>
+        </row>
+
+        <tabs value="@state.filter" onChange="@action.setFilter">
+          <tab value="all" label="All" count="@state.submissions.length" />
+          <tab value="unread" label="Unread" count="@state.unreadCount" />
+          <tab value="spam" label="Spam" count="@state.spamCount" />
+        </tabs>
+
+        <container variant="card">
+          <table selectable="true" onSelectionChange="@action.setSelectedSubmissions">
+            <thead>
+              <tr>
+                <th width="40px"><checkbox bind="@state.allSelected" onChange="@action.toggleSelectAll" /></th>
+                <th>Form</th>
+                <th>Response Summary</th>
+                <th>Date</th>
+                <th width="100px">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <for each="submission" in="@state.submissions | filter(@state.filter)">
+                <tr
+                  selected="@state.selectedSubmissions.includes(@item.id)"
+                  onDoubleClick="openDialog(@dialog.SubmissionDetail, { id: @item.id })"
+                  contextMenu="@contextMenu.Submission"
+                >
+                  <td><checkbox value="@item.id" /></td>
+                  <td>
+                    <row gap="sm" align="center">
+                      <if condition="!@item.isRead">
+                        <container width="8px" height="8px" borderRadius="full" background="@theme.colors.primary" />
+                      </if>
+                      <text value="@item.form.name" weight="@item.isRead ? 'normal' : 'medium'" />
+                    </row>
+                  </td>
+                  <td><text value="{summarize(@item.data, 80)}" muted="true" /></td>
+                  <td><text value="@item.createdAt" format="datetime" /></td>
+                  <td>
+                    <row gap="xs">
+                      <button icon="eye" variant="ghost" size="sm" tooltip="View" onClick="openDialog(@dialog.SubmissionDetail, { id: @item.id })" />
+                      <button icon="trash" variant="ghost" size="sm" tooltip="Delete" onClick="@action.deleteSubmission(@item.id)" />
+                    </row>
+                  </td>
+                </tr>
+              </for>
+            </tbody>
+          </table>
+
+          <if condition="@state.submissions.length == 0">
+            <use component="EmptyState" icon="inbox" title="No submissions yet" description="Submissions will appear here when users fill out your forms" />
+          </if>
+        </container>
+
+        <pagination total="@state.totalSubmissions" pageSize="50" currentPage="@state.page" onChange="@action.setPage" />
+      </column>
+    </view>
+
+  </views>
+
+
+  <!-- ==================== WINDOWS ==================== -->
+  <windows>
+
+    <!-- Settings Window -->
+    <window name="Settings" title="Settings" width="700" height="500" resizable="false">
+      <row height="100%">
+        <!-- Settings Navigation -->
+        <column width="200px" background="@theme.colors.gray.50" padding="md" gap="xs">
+          <text variant="caption" muted="true" marginBottom="sm">SETTINGS</text>
+          <button variant="@state.settingsTab == 'general' ? 'subtle' : 'ghost'" align="left" onClick="@action.setSettingsTab('general')">General</button>
+          <button variant="@state.settingsTab == 'account' ? 'subtle' : 'ghost'" align="left" onClick="@action.setSettingsTab('account')">Account</button>
+          <button variant="@state.settingsTab == 'appearance' ? 'subtle' : 'ghost'" align="left" onClick="@action.setSettingsTab('appearance')">Appearance</button>
+          <button variant="@state.settingsTab == 'notifications' ? 'subtle' : 'ghost'" align="left" onClick="@action.setSettingsTab('notifications')">Notifications</button>
+          <button variant="@state.settingsTab == 'api' ? 'subtle' : 'ghost'" align="left" onClick="@action.setSettingsTab('api')">API Keys</button>
+          <button variant="@state.settingsTab == 'billing' ? 'subtle' : 'ghost'" align="left" onClick="@action.setSettingsTab('billing')">Billing</button>
+        </column>
+
+        <!-- Settings Content -->
+        <column grow="true" padding="lg">
+          <switch value="@state.settingsTab">
+            <case value="general">
+              <prompt>General settings: default form settings, language, timezone</prompt>
+            </case>
+            <case value="account">
+              <prompt>Account settings: profile, email, password, delete account</prompt>
+            </case>
+            <case value="appearance">
+              <column gap="md">
+                <text variant="heading2">Appearance</text>
+                <row gap="lg">
+                  <column gap="xs">
+                    <text variant="body">Theme</text>
+                    <segmentedControl value="@state.theme" onChange="@action.setTheme">
+                      <segment value="light" label="Light" />
+                      <segment value="dark" label="Dark" />
+                      <segment value="system" label="System" />
+                    </segmentedControl>
+                  </column>
+                </row>
+                <switch label="Compact mode" bind="@state.compactMode" />
+                <switch label="Show toolbar" bind="@state.showToolbar" />
+              </column>
+            </case>
+            <case value="api">
+              <prompt>API keys management with create, copy, delete</prompt>
+            </case>
+            <case value="billing">
+              <prompt>Billing: current plan, upgrade, payment method, invoices</prompt>
+            </case>
+          </switch>
+        </column>
+      </row>
+    </window>
+
+
+    <!-- Preview Window -->
+    <window name="Preview" title="Form Preview - @state.form.name" width="500" height="700">
+      <column height="100%">
+        <toolbar>
+          <toolbarGroup>
+            <toolbarButton icon="smartphone" tooltip="Mobile View" onClick="@action.setPreviewSize('mobile')" active="@state.previewSize == 'mobile'" />
+            <toolbarButton icon="tablet" tooltip="Tablet View" onClick="@action.setPreviewSize('tablet')" active="@state.previewSize == 'tablet'" />
+            <toolbarButton icon="monitor" tooltip="Desktop View" onClick="@action.setPreviewSize('desktop')" active="@state.previewSize == 'desktop'" />
+          </toolbarGroup>
+          <spacer />
+          <toolbarButton icon="external-link" tooltip="Open in Browser" onClick="@action.openInBrowser" />
+        </toolbar>
+
+        <container grow="true" background="@theme.colors.gray.100" padding="md" align="center">
+          <container
+            width="@state.previewSize == 'mobile' ? '375px' : (@state.previewSize == 'tablet' ? '768px' : '100%')"
+            height="100%"
+            background="white"
+            borderRadius="md"
+            shadow="lg"
+            overflow="auto"
+          >
+            <prompt>Render the form preview with all fields and styling</prompt>
+          </container>
+        </container>
+      </column>
+    </window>
+
+  </windows>
+
+
+  <!-- ==================== DIALOGS ==================== -->
+  <dialogs>
+
+    <!-- Create Form Dialog -->
+    <dialog name="CreateForm" title="Create New Form" width="450">
+      <form onSubmit="@action.createForm" onSuccess="closeDialog()">
+        <column gap="md" padding="lg">
+          <input label="Form Name" bind="name" required="true" placeholder="e.g., Contact Form" autoFocus="true" />
+          <textarea label="Description" bind="description" rows="2" placeholder="Optional description..." />
+
+          <text variant="caption" muted="true" marginTop="md">Or start from a template:</text>
+          <container layout="grid" columns="3" gap="sm">
+            <for each="template" in="@state.templates">
+              <container
+                variant="outline"
+                padding="md"
+                interactive="true"
+                selected="@state.selectedTemplate == @item.id"
+                onClick="@action.selectTemplate(@item.id)"
+              >
+                <column align="center" gap="xs">
+                  <icon name="@item.icon" size="lg" color="@theme.colors.primary" />
+                  <text variant="caption" align="center" value="@item.name" />
+                </column>
+              </container>
+            </for>
+          </container>
+
+          <row justify="end" gap="sm" marginTop="md">
+            <button variant="outline" onClick="closeDialog()">Cancel</button>
+            <button type="submit" variant="primary">Create</button>
+          </row>
+        </column>
+      </form>
+    </dialog>
+
+
+    <!-- Share Dialog -->
+    <dialog name="Share" title="Share Form" width="500">
+      <column gap="md" padding="lg">
+        <container variant="card" padding="md">
+          <column gap="sm">
+            <text variant="caption" muted="true">Form Link</text>
+            <row gap="sm">
+              <input value="@state.form.publicUrl" readOnly="true" grow="true" />
+              <button icon="copy" onClick="@action.copyLink" tooltip="Copy to clipboard" />
+              <button icon="external-link" onClick="@action.openInBrowser" tooltip="Open in browser" />
+            </row>
+          </column>
+        </container>
+
+        <container variant="card" padding="md">
+          <column gap="sm">
+            <text variant="caption" muted="true">Embed Code</text>
+            <textarea value="@state.embedCode" readOnly="true" rows="3" fontFamily="mono" />
+            <button variant="outline" size="sm" icon="copy" onClick="@action.copyEmbed">Copy Embed Code</button>
+          </column>
+        </container>
+
+        <row justify="end" marginTop="md">
+          <button onClick="closeDialog()">Done</button>
+        </row>
+      </column>
+    </dialog>
+
+
+    <!-- Submission Detail Dialog -->
+    <dialog name="SubmissionDetail" title="Submission Details" width="600">
+      <params>
+        <param name="id" type="uuid" />
+      </params>
+      <data>
+        <query name="submission" type="@entity.Submission" filter="id == @param.id" include="form" />
+      </data>
+
+      <column>
+        <container padding="lg" borderBottom="true">
+          <row justify="between" align="center">
+            <column>
+              <text variant="subtitle" value="@state.submission.form.name" />
+              <text variant="caption" muted="true" value="@state.submission.createdAt" format="datetime" />
+            </column>
+            <row gap="sm">
+              <button icon="download" variant="outline" size="sm" onClick="@action.exportSubmission">Export</button>
+              <button icon="trash" variant="outline" size="sm" color="danger" onClick="@action.deleteSubmission">Delete</button>
+            </row>
+          </row>
+        </container>
+
+        <scroll maxHeight="400px" padding="lg">
+          <column gap="md">
+            <for each="field" in="@state.submission.form.fields">
+              <container>
+                <text variant="caption" muted="true" value="@item.label" />
+                <text variant="body" value="@state.submission.data[@item.id]" />
+              </container>
+            </for>
+          </column>
+        </scroll>
+
+        <container padding="lg" borderTop="true">
+          <row justify="between" align="center">
+            <column>
+              <text variant="caption" muted="true">Metadata</text>
+              <text variant="caption">IP: @state.submission.ipAddress</text>
+            </column>
+            <button onClick="closeDialog()">Close</button>
+          </row>
+        </container>
+      </column>
+    </dialog>
+
+
+    <!-- About Dialog -->
+    <dialog name="About" title="About FormCraft" width="400">
+      <column align="center" gap="md" padding="xl">
+        <icon name="form" size="xl" color="@theme.colors.primary" />
+        <text variant="heading2">FormCraft</text>
+        <text variant="body" muted="true">Version 1.0.0</text>
+        <text variant="caption" muted="true" align="center">
+          A powerful form builder for creating beautiful, functional forms.
+        </text>
+        <row gap="md" marginTop="md">
+          <button variant="text" onClick="@action.openWebsite">Website</button>
+          <button variant="text" onClick="@action.openDocs">Documentation</button>
+        </row>
+        <button variant="outline" onClick="closeDialog()" marginTop="md">Close</button>
+      </column>
+    </dialog>
+
+  </dialogs>
+
+
+  <!-- ==================== CONTEXT MENUS ==================== -->
+  <contextMenus>
+
+    <contextMenu name="FormItem">
+      <menuItem icon="edit" label="Edit" onClick="openWindow(@window.FormEditor, { id: @context.id })" />
+      <menuItem icon="eye" label="Preview" onClick="openWindow(@window.Preview, { id: @context.id })" />
+      <separator />
+      <menuItem icon="copy" label="Duplicate" onClick="@action.duplicate(@context.id)" />
+      <menuItem icon="share-2" label="Share" onClick="openDialog(@dialog.Share, { id: @context.id })" enabled="@context.status == 'published'" />
+      <separator />
+      <menuItem icon="archive" label="Archive" onClick="@action.archive(@context.id)" />
+      <menuItem icon="trash" label="Delete" color="danger" onClick="@action.confirmDelete(@context.id)" />
+    </contextMenu>
+
+    <contextMenu name="Field">
+      <menuItem icon="copy" label="Duplicate" shortcut="Ctrl+D" onClick="@action.duplicateField(@context.id)" />
+      <separator />
+      <menuItem icon="arrow-up" label="Move Up" onClick="@action.moveFieldUp(@context.id)" enabled="@context.index > 0" />
+      <menuItem icon="arrow-down" label="Move Down" onClick="@action.moveFieldDown(@context.id)" enabled="@context.index < @state.form.fields.length - 1" />
+      <separator />
+      <menuItem icon="trash" label="Delete" color="danger" shortcut="Delete" onClick="@action.deleteField(@context.id)" />
+    </contextMenu>
+
+    <contextMenu name="Submission">
+      <menuItem icon="eye" label="View Details" onClick="openDialog(@dialog.SubmissionDetail, { id: @context.id })" />
+      <menuItem icon="check" label="Mark as Read" onClick="@action.markAsRead(@context.id)" enabled="!@context.isRead" />
+      <separator />
+      <menuItem icon="download" label="Export" onClick="@action.exportSubmission(@context.id)" />
+      <separator />
+      <menuItem icon="alert-triangle" label="Mark as Spam" onClick="@action.markAsSpam(@context.id)" />
+      <menuItem icon="trash" label="Delete" color="danger" onClick="@action.deleteSubmission(@context.id)" />
+    </contextMenu>
+
+  </contextMenus>
+
+</webapp>
