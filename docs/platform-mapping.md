@@ -1,367 +1,487 @@
 # Platform Element Mapping
 
-This document maps UI spec elements between webapp and mobile platforms, helping maintain consistency when creating platform-specific specs from shared definitions.
+Visual reference for converting webapp specs to mobile specs.
 
 ---
 
 ## Navigation
 
-| Concept | Webapp | Mobile |
-|---------|--------|--------|
-| Primary navigation | `<layout>` with sidebar slot | `<navigation type="tabs">` |
-| Navigation item | `<navItem to="@page.X">` | `<tab screen="@screen.X">` |
-| Route | `<page route="/path">` | `<screen name="X">` |
-| URL parameters | `<param name="id">` in page | `<param name="id">` in screen |
-| Back navigation | Browser back / breadcrumbs | `backButton="true"` on navigationBar |
-| Deep linking | URL routes | Universal links / App Links |
+```mermaid
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["**Primary Nav**<br/>layout + sidebar slot"]
+            W2["**Nav Item**<br/>navItem to=@page.X"]
+            W3["**Route**<br/>page route=/path"]
+            W4["**Back**<br/>Browser history"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["**Primary Nav**<br/>navigation type=tabs"]
+            M2["**Nav Item**<br/>tab screen=@screen.X"]
+            M3["**Route**<br/>screen name=X"]
+            M4["**Back**<br/>navigationBar backButton"]
+        end
+    end
 
-### Example
+    W1 -.-> M1
+    W2 -.-> M2
+    W3 -.-> M3
+    W4 -.-> M4
 
-**Webapp:**
-```xml
-<layouts>
-  <layout name="AppShell">
-    <slot name="sidebar">
-      <navItem to="@page.Dashboard" icon="home">Dashboard</navItem>
-      <navItem to="@page.Forms" icon="file-text">Forms</navItem>
-    </slot>
-    <slot name="content" />
-  </layout>
-</layouts>
-
-<pages>
-  <page name="Dashboard" route="/dashboard" layout="AppShell" />
-</pages>
-```
-
-**Mobile:**
-```xml
-<navigation type="tabs">
-  <tab name="dashboard" label="Dashboard" icon="home" screen="@screen.Dashboard" />
-  <tab name="forms" label="Forms" icon="file-text" screen="@screen.Forms" />
-</navigation>
-
-<screens>
-  <screen name="Dashboard" initial="true" />
-</screens>
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
 ```
 
 ---
 
 ## Page Structure
 
-| Concept | Webapp | Mobile |
-|---------|--------|--------|
-| Page container | `<page>` | `<screen>` |
-| Page header | Slot in layout | `<navigationBar>` |
-| Page title | `<text variant="heading1">` | `<text variant="largeTitle">` or navigationBar title |
-| Content scroll | `scroll="true"` on slot | `<scroll>` wrapper or `<list>` |
-| Safe areas | N/A | `safeArea="true"` on container |
+```mermaid
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["**Container**<br/>page"]
+            W2["**Header**<br/>slot in layout"]
+            W3["**Title**<br/>text variant=heading1"]
+            W4["**Scroll**<br/>scroll=true on slot"]
+            W5["**Safe Area**<br/>N/A"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["**Container**<br/>screen"]
+            M2["**Header**<br/>navigationBar"]
+            M3["**Title**<br/>text variant=largeTitle"]
+            M4["**Scroll**<br/>scroll or list"]
+            M5["**Safe Area**<br/>safeArea=true"]
+        end
+    end
 
-### Example
+    W1 -.-> M1
+    W2 -.-> M2
+    W3 -.-> M3
+    W4 -.-> M4
+    W5 -.-> M5
 
-**Webapp:**
-```xml
-<page name="Forms" route="/forms" layout="AppShell">
-  <slot target="@layout.AppShell.content">
-    <container layout="column" gap="lg">
-      <text variant="heading1">Forms</text>
-      <!-- content -->
-    </container>
-  </slot>
-</page>
-```
-
-**Mobile:**
-```xml
-<screen name="Forms">
-  <navigationBar title="Forms" />
-  <column safeArea="true" padding="md">
-    <!-- content -->
-  </column>
-</screen>
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
 ```
 
 ---
 
 ## Overlays & Dialogs
 
-| Concept | Webapp | Mobile |
-|---------|--------|--------|
-| Form dialog | `<modal>` | `<sheet>` |
-| Confirmation | `<modal size="small">` | `<alert>` |
-| Action menu | `<dropdown>` | `<sheet>` with list or action sheet |
-| Full-screen overlay | `<modal size="full">` | `push(@screen.X)` |
-| Dismissal | `closeModal()` | `dismissSheet()` |
+```mermaid
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["**Form Dialog**<br/>modal"]
+            W2["**Confirmation**<br/>modal size=small"]
+            W3["**Menu**<br/>dropdown"]
+            W4["**Full Screen**<br/>modal size=full"]
+            W5["**Close**<br/>closeModal( )"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["**Form Dialog**<br/>sheet"]
+            M2["**Confirmation**<br/>alert"]
+            M3["**Menu**<br/>sheet with list"]
+            M4["**Full Screen**<br/>push(@screen)"]
+            M5["**Close**<br/>dismissSheet( )"]
+        end
+    end
 
-### Example
+    W1 -.-> M1
+    W2 -.-> M2
+    W3 -.-> M3
+    W4 -.-> M4
+    W5 -.-> M5
 
-**Webapp:**
-```xml
-<modals>
-  <modal name="CreateForm" title="New Form" size="medium">
-    <form onSubmit="@action.create" onSuccess="closeModal()">
-      <input label="Name" bind="name" />
-      <button type="submit">Create</button>
-    </form>
-  </modal>
-</modals>
-
-<!-- Trigger -->
-<button onClick="openModal(@modal.CreateForm)">New Form</button>
-```
-
-**Mobile:**
-```xml
-<sheets>
-  <sheet name="CreateForm" height="auto" dismissible="true">
-    <column padding="lg" gap="md">
-      <text variant="headline">New Form</text>
-      <form onSubmit="@action.create" onSuccess="dismissSheet()">
-        <input label="Name" bind="name" />
-        <button type="submit" fullWidth="true">Create</button>
-      </form>
-    </column>
-  </sheet>
-</sheets>
-
-<!-- Trigger -->
-<button onClick="presentSheet(@sheet.CreateForm)">New Form</button>
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
 ```
 
 ---
 
-## Lists & Data Display
+## Lists & Data
 
-| Concept | Webapp | Mobile |
-|---------|--------|--------|
-| Data table | `<table>` | `<list>` |
-| Grid layout | `<container layout="grid">` | `<list>` or horizontal `<scroll>` |
-| List item | `<tr>` or card | `<listItem>` or custom row |
-| Item actions | Dropdown menu / buttons | `swipeActions` |
-| Bulk selection | Checkboxes + toolbar | Edit mode with multi-select |
-| Pagination | `<pagination>` | Infinite scroll |
-| Refresh | Refresh button | `refreshable="true"` (pull-to-refresh) |
-| Grouping | Section headers | `grouped="true" groupBy="field"` |
+```mermaid
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["**Table**<br/>table + thead + tbody"]
+            W2["**Grid**<br/>container layout=grid"]
+            W3["**Row**<br/>tr or card"]
+            W4["**Actions**<br/>dropdown menu"]
+            W5["**Pagination**<br/>pagination"]
+            W6["**Refresh**<br/>button"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["**Table**<br/>list"]
+            M2["**Grid**<br/>list or horizontal scroll"]
+            M3["**Row**<br/>listItem"]
+            M4["**Actions**<br/>swipeActions"]
+            M5["**Pagination**<br/>infinite scroll"]
+            M6["**Refresh**<br/>refreshable=true"]
+        end
+    end
 
-### Example
+    W1 -.-> M1
+    W2 -.-> M2
+    W3 -.-> M3
+    W4 -.-> M4
+    W5 -.-> M5
+    W6 -.-> M6
 
-**Webapp:**
-```xml
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Status</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <for each="form" in="@state.forms">
-      <tr>
-        <td>@item.name</td>
-        <td><badge value="@item.status" /></td>
-        <td>
-          <dropdown trigger="icon" icon="more-vertical">
-            <menuItem onClick="@action.edit(@item.id)">Edit</menuItem>
-            <menuItem onClick="@action.delete(@item.id)">Delete</menuItem>
-          </dropdown>
-        </td>
-      </tr>
-    </for>
-  </tbody>
-</table>
-<pagination data="@state.forms" />
-```
-
-**Mobile:**
-```xml
-<list data="@state.forms" refreshable="true" onRefresh="@action.refresh">
-  <for each="form" in="@data">
-    <listItem
-      title="@item.name"
-      subtitle="@item.status"
-      onClick="push(@screen.FormDetail, { id: @item.id })"
-      swipeActions="true"
-    >
-      <swipeAction side="right" icon="edit" onClick="@action.edit(@item.id)" />
-      <swipeAction side="right" icon="trash" color="danger" onClick="@action.delete(@item.id)" />
-    </listItem>
-  </for>
-</list>
-<!-- Infinite scroll is automatic -->
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
 ```
 
 ---
 
 ## Forms & Inputs
 
-| Concept | Webapp | Mobile |
-|---------|--------|--------|
-| Form container | `<form>` | `<form>` |
-| Text input | `<input>` | `<input>` |
-| Select/dropdown | `<select>` | `<select>` or picker sheet |
-| Toggle | `<switch>` or `<checkbox>` | `<switch>` |
-| Date picker | `<datepicker>` | `<datepicker>` (native) |
-| Segmented choice | Radio group or tabs | `<segmentedControl>` |
-| Search | `<search>` | `<search>` (with clear button) |
+```mermaid
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["**Form**<br/>form"]
+            W2["**Text**<br/>input"]
+            W3["**Select**<br/>select"]
+            W4["**Toggle**<br/>switch or checkbox"]
+            W5["**Date**<br/>datepicker"]
+            W6["**Choice**<br/>radio group"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["**Form**<br/>form"]
+            M2["**Text**<br/>input"]
+            M3["**Select**<br/>select or picker sheet"]
+            M4["**Toggle**<br/>switch"]
+            M5["**Date**<br/>datepicker (native)"]
+            M6["**Choice**<br/>segmentedControl"]
+        end
+    end
 
-### Example
+    W1 -.-> M1
+    W2 -.-> M2
+    W3 -.-> M3
+    W4 -.-> M4
+    W5 -.-> M5
+    W6 -.-> M6
 
-**Webapp:**
-```xml
-<container layout="row" gap="md">
-  <select value="@state.filter" onChange="@action.setFilter">
-    <option value="all">All</option>
-    <option value="active">Active</option>
-  </select>
-  <search placeholder="Search..." onSearch="@action.search" />
-</container>
-```
-
-**Mobile:**
-```xml
-<search placeholder="Search..." onSearch="@action.search" padding="md" />
-<segmentedControl value="@state.filter" onChange="@action.setFilter" padding="md">
-  <segment value="all" label="All" />
-  <segment value="active" label="Active" />
-</segmentedControl>
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
 ```
 
 ---
 
 ## Actions & Buttons
 
-| Concept | Webapp | Mobile |
-|---------|--------|--------|
-| Primary action | Button in header/content | `<floatingButton>` or header button |
-| Secondary actions | Button group | navigationBar `rightButtons` |
-| Destructive action | `<button variant="danger">` | Alert with `destructive="true"` |
-| Context menu | Right-click / dropdown | Long-press or swipe actions |
+```mermaid
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["**Primary Action**<br/>button in header"]
+            W2["**Secondary**<br/>button group"]
+            W3["**Destructive**<br/>button variant=danger"]
+            W4["**Context Menu**<br/>dropdown / right-click"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["**Primary Action**<br/>floatingButton or header"]
+            M2["**Secondary**<br/>navigationBar rightButtons"]
+            M3["**Destructive**<br/>alert destructive=true"]
+            M4["**Context Menu**<br/>swipe or long-press"]
+        end
+    end
 
-### Example
+    W1 -.-> M1
+    W2 -.-> M2
+    W3 -.-> M3
+    W4 -.-> M4
 
-**Webapp:**
-```xml
-<container layout="row" justify="between">
-  <text variant="heading1">Forms</text>
-  <button variant="primary" icon="plus" onClick="openModal(@modal.CreateForm)">
-    New Form
-  </button>
-</container>
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
 ```
-
-**Mobile:**
-```xml
-<screen name="Forms">
-  <navigationBar
-    title="Forms"
-    rightButtons="[{ icon: 'plus', onClick: presentSheet(@sheet.CreateForm) }]"
-  />
-  <!-- Or use a FAB -->
-  <floatingButton icon="plus" onClick="presentSheet(@sheet.CreateForm)" />
-</screen>
-```
-
----
-
-## Feedback & States
-
-| Concept | Webapp | Mobile |
-|---------|--------|--------|
-| Loading | `<spinner>` or skeleton | `<spinner>` or skeleton |
-| Error message | `<alert variant="error">` | `<alert>` dialog |
-| Success message | Toast notification | Toast or banner |
-| Empty state | Custom component | Custom component |
-| Pull-to-refresh | N/A | `refreshable="true"` on list |
-
----
-
-## Layout Containers
-
-| Concept | Webapp | Mobile |
-|---------|--------|--------|
-| Vertical stack | `<container layout="column">` | `<column>` |
-| Horizontal stack | `<container layout="row">` | `<row>` |
-| Grid | `<container layout="grid" columns="3">` | `<container layout="grid">` or list |
-| Card | `<container variant="card">` | `<container variant="card">` |
-| Section | `<section>` | `<listSection>` in lists |
-| Divider | `<divider>` | `<divider>` or list separator |
-| Spacer | `<spacer>` | `<spacer>` |
 
 ---
 
 ## Typography
 
-| Webapp Variant | Mobile Equivalent | Usage |
-|----------------|-------------------|-------|
-| `heading1` | `largeTitle` | Page titles |
-| `heading2` | `title` or `headline` | Section headers |
-| `heading3` | `headline` | Subsection headers |
-| `subtitle` | `body` with `weight="medium"` | Card titles |
-| `body` | `body` | Default text |
-| `caption` | `caption` | Secondary text |
+```mermaid
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["**Page Title**<br/>heading1"]
+            W2["**Section**<br/>heading2"]
+            W3["**Subsection**<br/>heading3"]
+            W4["**Card Title**<br/>subtitle"]
+            W5["**Body**<br/>body"]
+            W6["**Secondary**<br/>caption"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["**Page Title**<br/>largeTitle"]
+            M2["**Section**<br/>title or headline"]
+            M3["**Subsection**<br/>headline"]
+            M4["**Card Title**<br/>body weight=medium"]
+            M5["**Body**<br/>body"]
+            M6["**Secondary**<br/>caption"]
+        end
+    end
+
+    W1 -.-> M1
+    W2 -.-> M2
+    W3 -.-> M3
+    W4 -.-> M4
+    W5 -.-> M5
+    W6 -.-> M6
+
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
+```
 
 ---
 
-## Quick Reference: Action Mapping
+## Layout Containers
 
-| User Action | Webapp | Mobile |
-|-------------|--------|--------|
-| Navigate to page | `navigateTo(@page.X)` | `push(@screen.X)` |
-| Go back | `navigateBack()` | Back button / swipe |
-| Open dialog | `openModal(@modal.X)` | `presentSheet(@sheet.X)` |
-| Close dialog | `closeModal()` | `dismissSheet()` |
-| Show confirmation | Modal with buttons | `presentAlert(@alert.X)` |
-| Switch tabs | N/A | `switchTab('name')` |
-| Share content | Web Share API | `shareNative()` |
-| Copy to clipboard | `copyToClipboard()` | `copyToClipboard()` |
+```mermaid
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["**Vertical**<br/>container layout=column"]
+            W2["**Horizontal**<br/>container layout=row"]
+            W3["**Grid**<br/>container layout=grid"]
+            W4["**Card**<br/>container variant=card"]
+            W5["**Section**<br/>section"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["**Vertical**<br/>column"]
+            M2["**Horizontal**<br/>row"]
+            M3["**Grid**<br/>grid or list"]
+            M4["**Card**<br/>container variant=card"]
+            M5["**Section**<br/>listSection"]
+        end
+    end
+
+    W1 -.-> M1
+    W2 -.-> M2
+    W3 -.-> M3
+    W4 -.-> M4
+    W5 -.-> M5
+
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
+```
+
+---
+
+## Action Functions
+
+```mermaid
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["navigateTo(@page.X)"]
+            W2["navigateBack( )"]
+            W3["openModal(@modal.X)"]
+            W4["closeModal( )"]
+            W5["N/A"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["push(@screen.X)"]
+            M2["back button / swipe"]
+            M3["presentSheet(@sheet.X)"]
+            M4["dismissSheet( )"]
+            M5["switchTab('name')"]
+        end
+    end
+
+    W1 -.-> M1
+    W2 -.-> M2
+    W3 -.-> M3
+    W4 -.-> M4
+    W5 -.-> M5
+
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
+```
 
 ---
 
 ## Platform-Specific Elements
 
-### Webapp Only
+```mermaid
+flowchart LR
+    subgraph WebOnly["🌐 Webapp Only"]
+        direction TB
+        WA["table"]
+        WB["pagination"]
+        WC["breadcrumb"]
+        WD["sidebar"]
+        WE["tooltip"]
+        WF["tabs (horizontal)"]
+    end
 
-| Element | Description |
-|---------|-------------|
-| `<table>` | Full data tables with sorting |
-| `<pagination>` | Page-based navigation |
-| `<breadcrumb>` | Navigation trail |
-| `<sidebar>` | Persistent side navigation |
-| `<tabs>` (horizontal) | Content tabs |
-| `<tooltip>` | Hover tooltips |
+    subgraph MobileOnly["📱 Mobile Only"]
+        direction TB
+        MA["navigationBar"]
+        MB["tabBar"]
+        MC["sheet"]
+        MD["alert"]
+        ME["floatingButton"]
+        MF["swipeAction"]
+        MG["segmentedControl"]
+        MH["listItem / listSection"]
+        MI["safeArea"]
+        MJ["refreshable"]
+    end
 
-### Mobile Only
-
-| Element | Description |
-|---------|-------------|
-| `<navigationBar>` | Screen header with back button |
-| `<tabBar>` | Bottom tab navigation |
-| `<sheet>` | Bottom sheet overlay |
-| `<alert>` | Native alert dialog |
-| `<floatingButton>` | FAB for primary action |
-| `<swipeAction>` | Swipe-to-reveal actions |
-| `<segmentedControl>` | iOS-style segment picker |
-| `<listItem>` | Native list row |
-| `<listSection>` | Grouped list header |
-| `safeArea="true"` | Respect device notches |
-| `refreshable="true"` | Pull-to-refresh |
+    style WebOnly fill:#e3f2fd,stroke:#1976d2
+    style MobileOnly fill:#f3e5f5,stroke:#7b1fa2
+```
 
 ---
 
-## Migration Checklist
+## Migration Workflow
 
-When creating a mobile spec from a webapp spec:
+```mermaid
+flowchart LR
+    subgraph S1["1️⃣ Structure"]
+        A1["page → screen"]
+        A2["Add navigationBar"]
+        A3["Add safeArea"]
+    end
 
-- [ ] Replace `<page>` with `<screen>`
-- [ ] Replace sidebar navigation with `<navigation type="tabs">`
-- [ ] Replace `<modal>` with `<sheet>` or `<alert>`
-- [ ] Replace `<table>` with `<list>`
-- [ ] Add `safeArea="true"` to main containers
-- [ ] Add `refreshable="true"` to data lists
-- [ ] Convert dropdown menus to swipe actions
-- [ ] Move primary actions to FAB or navigationBar
-- [ ] Replace pagination with infinite scroll
-- [ ] Add `<navigationBar>` to detail screens
-- [ ] Update navigation functions (`navigateTo` → `push`, `openModal` → `presentSheet`)
+    subgraph S2["2️⃣ Navigation"]
+        B1["sidebar → tabs"]
+        B2["navigateTo → push"]
+    end
+
+    subgraph S3["3️⃣ Overlays"]
+        C1["modal → sheet"]
+        C2["confirm → alert"]
+    end
+
+    subgraph S4["4️⃣ Lists"]
+        D1["table → list"]
+        D2["Add refreshable"]
+        D3["Add swipeActions"]
+    end
+
+    subgraph S5["5️⃣ Actions"]
+        E1["button → FAB"]
+    end
+
+    S1 --> S2 --> S3 --> S4 --> S5
+
+    style S1 fill:#e8f5e9,stroke:#388e3c
+    style S2 fill:#e3f2fd,stroke:#1976d2
+    style S3 fill:#fff3e0,stroke:#f57c00
+    style S4 fill:#fce4ec,stroke:#c2185b
+    style S5 fill:#f3e5f5,stroke:#7b1fa2
+```
+
+---
+
+## Quick Examples
+
+### Navigation Example
+
+**Webapp:**
+```xml
+<layout name="AppShell">
+  <slot name="sidebar">
+    <navItem to="@page.Dashboard">Dashboard</navItem>
+    <navItem to="@page.Forms">Forms</navItem>
+  </slot>
+</layout>
+```
+
+**Mobile:**
+```xml
+<navigation type="tabs">
+  <tab label="Dashboard" screen="@screen.Dashboard" />
+  <tab label="Forms" screen="@screen.Forms" />
+</navigation>
+```
+
+### Dialog Example
+
+**Webapp:**
+```xml
+<modal name="Create" title="New Item">
+  <form onSubmit="@action.create" onSuccess="closeModal()">
+    <input label="Name" bind="name" />
+    <button type="submit">Create</button>
+  </form>
+</modal>
+
+<button onClick="openModal(@modal.Create)">New</button>
+```
+
+**Mobile:**
+```xml
+<sheet name="Create" height="auto" dismissible="true">
+  <form onSubmit="@action.create" onSuccess="dismissSheet()">
+    <input label="Name" bind="name" />
+    <button type="submit" fullWidth="true">Create</button>
+  </form>
+</sheet>
+
+<floatingButton icon="plus" onClick="presentSheet(@sheet.Create)" />
+```
+
+### List Example
+
+**Webapp:**
+```xml
+<table>
+  <for each="item" in="@state.items">
+    <tr>
+      <td>@item.name</td>
+      <td>
+        <dropdown>
+          <menuItem onClick="@action.edit">Edit</menuItem>
+          <menuItem onClick="@action.delete">Delete</menuItem>
+        </dropdown>
+      </td>
+    </tr>
+  </for>
+</table>
+<pagination data="@state.items" />
+```
+
+**Mobile:**
+```xml
+<list data="@state.items" refreshable="true">
+  <for each="item" in="@data">
+    <listItem title="@item.name" swipeActions="true">
+      <swipeAction icon="edit" onClick="@action.edit" />
+      <swipeAction icon="trash" color="danger" onClick="@action.delete" />
+    </listItem>
+  </for>
+</list>
+```
