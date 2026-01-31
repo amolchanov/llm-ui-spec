@@ -8,6 +8,10 @@ node_modules/
 dist/
 build/
 
+# VitePress
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
 # Editor temp files
 *.swp
 *.swo
