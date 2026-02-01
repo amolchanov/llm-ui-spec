@@ -208,25 +208,34 @@ llm-ui-spec/
 │   │   ├── lib/           # XML parsing, DnD, utilities
 │   │   └── types/         # TypeScript definitions
 │   └── package.json
-└── samples/
-    ├── formcraft.spec.xml         # Complete SaaS example
-    ├── formcraft.entities.spec.xml # External entities file
-    ├── formcraft.md               # Compiled markdown output
-    ├── llm-workflow-guide.md      # Iterative development guide
-    └── llm-codegen-prompt.md      # Code generation prompt template
+├── samples/
+│   ├── formcraft.shared.spec.xml    # Shared entities & components
+│   ├── formcraft.spec.xml           # Webapp (pages, modals)
+│   ├── formcraft.mobile.spec.xml    # Mobile (screens, sheets, tabs)
+│   ├── formcraft.desktop.spec.xml   # Desktop (windows, menus, toolbar)
+│   ├── formcraft.entities.spec.xml  # External entities file
+│   ├── formcraft.md                 # Compiled markdown output
+│   ├── llm-workflow-guide.md        # Iterative development guide
+│   └── llm-codegen-prompt.md        # Code generation prompt template
+└── docs/                            # VitePress documentation site
 ```
 
 ## Sample Application
 
-The `samples/formcraft.spec.xml` demonstrates a complete SaaS form builder with:
+The `samples/` folder contains FormCraft, a complete cross-platform SaaS form builder:
 
-- **Well-defined pages**: Dashboard, Form List, Form Editor, Login
-- **Prompt-guided pages**: Analytics, Settings, Pricing, Landing
-- **Mixed pages**: Public Form Renderer (structure + prompts)
-- **Reusable components**: Avatar, Card, FormCard, StatCard
-- **Entity definitions**: User, Form, FormField, Submission
-- **Multiple layouts**: AppShell, AuthLayout, FormEditorLayout
-- **External files**: Entities split into separate file
+| File | Description |
+|------|-------------|
+| `formcraft.shared.spec.xml` | Shared entities (User, Form, Submission) and components (Avatar, FormCard, StatCard) |
+| `formcraft.spec.xml` | Webapp with pages, modals, sidebar navigation |
+| `formcraft.mobile.spec.xml` | Mobile with screens, tabs, sheets, swipe actions |
+| `formcraft.desktop.spec.xml` | Desktop with windows, menu bar, toolbar, context menus |
+
+**Features demonstrated:**
+- **Cross-platform**: Same entities/components, platform-specific UI patterns
+- **Detail levels**: Mix of fully-defined and prompt-guided sections
+- **Reusable components**: Avatar, FormCard, StatCard, EmptyState
+- **Entity relationships**: User → Forms → Submissions
 
 ## External File Support
 
