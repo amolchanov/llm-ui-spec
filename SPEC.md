@@ -1,5 +1,7 @@
 # LLM UI Spec
 
+> **Preview:** This specification is under active development and may change.
+
 A declarative XML specification for defining UI structure that can be interpreted by LLMs to generate platform-specific code.
 
 ## Platform-Specific Documentation

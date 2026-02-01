@@ -1,5 +1,7 @@
 # LLM UI Spec - Webapp Platform
 
+> **Preview:** This specification is under active development and may change.
+
 Platform-specific types and patterns for web applications.
 
 See [Introduction](./) for core concepts (primitives, entities, prompts, etc.).

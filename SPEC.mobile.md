@@ -1,5 +1,7 @@
 # LLM UI Spec - Mobile Platform
 
+> **Preview:** This specification is under active development and may change.
+
 Platform-specific elements and patterns for mobile applications.
 
 See [SPEC.md](./SPEC.md) for shared concepts (entities, components, prompts, etc.).
