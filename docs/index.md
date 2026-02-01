@@ -100,7 +100,11 @@ Converts XML specs to LLM-friendly markdown for code generation. Outputs structu
 
 ```bash
 cd compiler && npm install
-node dist/cli.js ../samples/formcraft.spec.xml -o output.md
+
+# Compile any platform spec
+node dist/cli.js ../samples/formcraft.spec.xml -o webapp.md
+node dist/cli.js ../samples/formcraft.mobile.spec.xml -o mobile.md
+node dist/cli.js ../samples/formcraft.desktop.spec.xml -o desktop.md
 ```
 
 ## Platforms
