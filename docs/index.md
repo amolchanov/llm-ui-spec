@@ -86,6 +86,23 @@ At each level, validate with stakeholders before adding more detail. Generate co
 </webapp>
 ```
 
+## Tools
+
+### Visual Editor
+React-based editor for creating and editing specs with drag-and-drop. Open a spec file and visually build your UI structure.
+
+```bash
+cd editor && npm install && npm run dev
+```
+
+### Spec Compiler
+Converts XML specs to LLM-friendly markdown for code generation. Outputs structured prompts that any LLM can use.
+
+```bash
+cd compiler && npm install
+node dist/cli.js ../samples/formcraft.spec.xml -o output.md
+```
+
 ## Platforms
 
 <div class="platforms">
