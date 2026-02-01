@@ -24,219 +24,319 @@ Key characteristics:
 
 ---
 
-## App Configuration
-
-Configure window and system integration.
-
-```xml
-<config>
-  <window
-    title="MyApp"
-    width="1200"
-    height="800"
-    minWidth="800"
-    minHeight="600"
-    titleBarStyle="hidden"
-  />
-  <tray icon="app-icon" tooltip="MyApp" />
-</config>
-```
-
-### Window Attributes
+## Common Attributes
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `title` | string | Window title |
-| `width` | number | Initial width |
-| `height` | number | Initial height |
-| `minWidth` | number | Minimum width |
-| `minHeight` | number | Minimum height |
-| `resizable` | boolean | Can resize |
-| `titleBarStyle` | default/hidden | Title bar style |
+| `name` | string | Identifier for referencing |
+| `type` | string | Element or container type |
+| `prompt` | string | Natural language behavior description |
+| `use` | reference | Data binding |
+| `if` | expression | Render only if true |
+| `if-not` | expression | Render only if false |
+| `for-each` | collection | Iterate over items |
+
+All attributes (except `name`) can be expressed in prompt:
+
+```xml
+<!-- Attribute syntax -->
+<element type="text" use="@state.title" />
+<element type="spinner" if="@state.loading" />
+<container type="panel" for-each="@state.items" />
+
+<!-- Prompt syntax (equivalent) -->
+<element type="text" prompt="use @state.title" />
+<element type="spinner" prompt="if @state.loading" />
+<container type="panel" prompt="for each @state.items" />
+
+<!-- Type in prompt -->
+<element prompt="text, use @state.title" />
+<element prompt="spinner, if @state.loading" />
+<container prompt="panel, for each @state.items" />
+```
+
+Type is optional when parent context makes it clear:
+
+```xml
+<!-- Inside menu, children are menu items -->
+<container type="menu" prompt="label File">
+  <element prompt="shortcut Ctrl+N, on click open @dialog.Create">New</element>
+  <element prompt="shortcut Ctrl+S, on click @action.save">Save</element>
+</container>
+
+<!-- Inside tree-view, children are tree items -->
+<container type="tree-view">
+  <element prompt="home icon, on click @action.setView dashboard">Dashboard</element>
+  <container prompt="folder icon, expanded">Projects</container>
+</container>
+
+<!-- Inside toolbar, children are toolbar buttons -->
+<container type="toolbar">
+  <element prompt="plus icon, tooltip New, on click open @dialog.Create" />
+</container>
+```
+
+---
+
+## App Configuration
+
+```xml
+<config>
+  <window prompt="title MyApp, width 1200, height 800, min width 800, min height 600, hidden title bar" />
+  <tray prompt="icon app-icon, tooltip MyApp" />
+</config>
+```
+
+---
+
+## Container Types
+
+### Layout Types
+
+| Type | Description |
+|------|-------------|
+| `column` | Vertical layout |
+| `row` | Horizontal layout |
+| `split-view` | Resizable split layout |
+| `panel` | Split view panel |
+| `scroll` | Scrollable container |
+
+```xml
+<container type="column" prompt="height 100%">
+  <!-- Vertical content -->
+</container>
+
+<container type="row" prompt="padding small, gap medium, align center">
+  <!-- Horizontal content -->
+</container>
+
+<container type="split-view" prompt="horizontal, grow">
+  <container type="panel" prompt="width 260px, min width 200px, max width 400px, resizable, collapsible">
+    <!-- Sidebar -->
+  </container>
+  <container type="panel" prompt="grow">
+    <!-- Main content -->
+  </container>
+  <container type="panel" prompt="width 300px, resizable, collapsible" if="@state.propertiesVisible">
+    <!-- Properties panel -->
+  </container>
+</container>
+
+<container type="scroll" prompt="padding large">
+  <!-- Scrollable content -->
+</container>
+```
+
+### Structural Types
+
+| Type | Description |
+|------|-------------|
+| `title-bar` | Custom window title bar |
+| `toolbar` | Action toolbar |
+| `status-bar` | Application status bar |
+| `form` | Form container |
+
+```xml
+<!-- Custom title bar for frameless window -->
+<container type="title-bar" prompt="draggable">
+  <container type="row" prompt="padding small, gap medium, align center">
+    <element type="icon" prompt="app-icon, size small" />
+    <element type="text" prompt="body, medium weight">MyApp</element>
+    <element type="spacer" />
+    <element type="window-controls" />
+  </container>
+</container>
+
+<!-- Toolbar -->
+<container type="toolbar">
+  <container prompt="group">
+    <element prompt="plus icon, tooltip New (Ctrl+N), on click open @dialog.Create" />
+    <element prompt="folder icon, tooltip Open (Ctrl+O), on click @action.open" />
+    <element prompt="save icon, tooltip Save (Ctrl+S), on click @action.save, disabled if not @state.isDirty" />
+  </container>
+  <element type="separator" />
+  <container prompt="group">
+    <element prompt="undo icon, tooltip Undo, on click @action.undo, disabled if not @state.canUndo" />
+    <element prompt="redo icon, tooltip Redo, on click @action.redo, disabled if not @state.canRedo" />
+  </container>
+  <element type="spacer" />
+  <element type="search" prompt="placeholder Search..., width 250px, on search @action.search" />
+</container>
+
+<!-- Status bar -->
+<container type="status-bar">
+  <element use="@state.itemCount">items</element>
+  <element type="spacer" />
+  <element if="@state.isDirty">
+    <element prompt="caption, muted">Unsaved changes</element>
+  </element>
+  <element if-not="@state.isDirty">
+    <element prompt="caption, muted">Saved</element>
+  </element>
+</container>
+```
+
+---
+
+## Element Types
+
+### Display Elements
+
+| Type | Description |
+|------|-------------|
+| `text` | Text display |
+| `icon` | Icon display |
+| `badge` | Badge indicator |
+| `spinner` | Loading spinner |
+| `spacer` | Flexible space |
+
+```xml
+<element type="text" prompt="heading1">Dashboard</element>
+<element type="text" prompt="body, muted" use="@item.description" />
+<element type="icon" prompt="app-icon, size small" />
+<element type="badge" use="@state.status" prompt="size extra small" />
+<element type="spinner" prompt="size extra small, if @state.syncing" />
+<element type="spacer" />
+```
+
+### Input Elements
+
+| Type | Description |
+|------|-------------|
+| `input` | Text input |
+| `textarea` | Multi-line input |
+| `search` | Search field |
+| `checkbox` | Checkbox toggle |
+| `select` | Dropdown select |
+
+```xml
+<element type="input" prompt="required, auto focus">Name</element>
+<element type="textarea" prompt="rows 3">Description</element>
+<element type="search" prompt="placeholder Search..., width 250px, on search @action.search" />
+<element type="checkbox" use="@state.enabled">Enable feature</element>
+<element type="select" prompt="options @state.options, on change @action.setOption" />
+```
+
+### Action Elements
+
+| Type | Description |
+|------|-------------|
+| `button` | Click button |
+| `toolbar-button` | Toolbar action |
+| `window-controls` | Min/max/close buttons |
+
+```xml
+<element type="button" prompt="style primary, on click @action.save">Save</element>
+<element type="button" prompt="style outline, on click close dialog">Cancel</element>
+<element type="button" prompt="style danger, on click @action.delete then close dialog">Delete</element>
+<element type="toolbar-button" prompt="plus icon, tooltip New, on click open @dialog.Create" />
+<element type="window-controls" />
+```
 
 ---
 
 ## Menu Bar
 
-Application menu with keyboard shortcuts.
-
 ```xml
-<menuBar>
-  <menu label="File">
-    <menuItem label="New" shortcut="Ctrl+N" onClick="openDialog(@dialog.Create)" />
-    <menuItem label="Open..." shortcut="Ctrl+O" onClick="@action.open" />
-    <separator />
-    <menuItem label="Save" shortcut="Ctrl+S" onClick="@action.save" enabled="@state.isDirty" />
-    <menuItem label="Save As..." shortcut="Ctrl+Shift+S" onClick="@action.saveAs" />
-    <separator />
-    <menuItem label="Import" submenu="true">
-      <menuItem label="From JSON" onClick="@action.importJSON" />
-      <menuItem label="From CSV" onClick="@action.importCSV" />
-    </menuItem>
-    <menuItem label="Export" submenu="true">
-      <menuItem label="As JSON" onClick="@action.exportJSON" />
-      <menuItem label="As PDF" onClick="@action.exportPDF" />
-    </menuItem>
-    <separator />
-    <menuItem label="Settings" shortcut="Ctrl+," onClick="openWindow(@window.Settings)" />
-    <separator />
-    <menuItem label="Exit" shortcut="Alt+F4" onClick="@action.quit" />
-  </menu>
+<container type="menu-bar">
+  <container type="menu" prompt="label File">
+    <element prompt="shortcut Ctrl+N, on click open @dialog.Create">New</element>
+    <element prompt="shortcut Ctrl+O, on click @action.open">Open...</element>
+    <element type="separator" />
+    <element prompt="shortcut Ctrl+S, on click @action.save, enabled if @state.isDirty">Save</element>
+    <element prompt="shortcut Ctrl+Shift+S, on click @action.saveAs">Save As...</element>
+    <element type="separator" />
+    <container prompt="submenu">Import
+      <element prompt="on click @action.importJSON">From JSON</element>
+      <element prompt="on click @action.importCSV">From CSV</element>
+    </container>
+    <container prompt="submenu">Export
+      <element prompt="on click @action.exportJSON">As JSON</element>
+      <element prompt="on click @action.exportPDF">As PDF</element>
+    </container>
+    <element type="separator" />
+    <element prompt="shortcut Ctrl+Comma, on click open @window.Settings">Settings</element>
+    <element type="separator" />
+    <element prompt="shortcut Alt+F4, on click @action.quit">Exit</element>
+  </container>
 
-  <menu label="Edit">
-    <menuItem label="Undo" shortcut="Ctrl+Z" onClick="@action.undo" enabled="@state.canUndo" />
-    <menuItem label="Redo" shortcut="Ctrl+Shift+Z" onClick="@action.redo" enabled="@state.canRedo" />
-    <separator />
-    <menuItem label="Cut" shortcut="Ctrl+X" onClick="@action.cut" />
-    <menuItem label="Copy" shortcut="Ctrl+C" onClick="@action.copy" />
-    <menuItem label="Paste" shortcut="Ctrl+V" onClick="@action.paste" />
-    <menuItem label="Delete" shortcut="Delete" onClick="@action.delete" />
-    <separator />
-    <menuItem label="Select All" shortcut="Ctrl+A" onClick="@action.selectAll" />
-  </menu>
+  <container type="menu" prompt="label Edit">
+    <element prompt="shortcut Ctrl+Z, on click @action.undo, enabled if @state.canUndo">Undo</element>
+    <element prompt="shortcut Ctrl+Shift+Z, on click @action.redo, enabled if @state.canRedo">Redo</element>
+    <element type="separator" />
+    <element prompt="shortcut Ctrl+X, on click @action.cut">Cut</element>
+    <element prompt="shortcut Ctrl+C, on click @action.copy">Copy</element>
+    <element prompt="shortcut Ctrl+V, on click @action.paste">Paste</element>
+    <element prompt="shortcut Delete, on click @action.delete">Delete</element>
+    <element type="separator" />
+    <element prompt="shortcut Ctrl+A, on click @action.selectAll">Select All</element>
+  </container>
 
-  <menu label="View">
-    <menuItem label="Toggle Sidebar" shortcut="Ctrl+B" onClick="@action.toggleSidebar" checked="@state.sidebarVisible" />
-    <separator />
-    <menuItem label="Zoom In" shortcut="Ctrl+=" onClick="@action.zoomIn" />
-    <menuItem label="Zoom Out" shortcut="Ctrl+-" onClick="@action.zoomOut" />
-    <menuItem label="Reset Zoom" shortcut="Ctrl+0" onClick="@action.zoomReset" />
-    <separator />
-    <menuItem label="Full Screen" shortcut="F11" onClick="@action.toggleFullScreen" />
-  </menu>
+  <container type="menu" prompt="label View">
+    <element prompt="shortcut Ctrl+B, on click @action.toggleSidebar, checked if @state.sidebarVisible">Toggle Sidebar</element>
+    <element type="separator" />
+    <element prompt="shortcut Ctrl+Equals, on click @action.zoomIn">Zoom In</element>
+    <element prompt="shortcut Ctrl+Minus, on click @action.zoomOut">Zoom Out</element>
+    <element prompt="shortcut Ctrl+0, on click @action.zoomReset">Reset Zoom</element>
+    <element type="separator" />
+    <element prompt="shortcut F11, on click @action.toggleFullScreen">Full Screen</element>
+  </container>
 
-  <menu label="Help">
-    <menuItem label="Documentation" shortcut="F1" onClick="@action.openDocs" />
-    <menuItem label="Keyboard Shortcuts" shortcut="Ctrl+/" onClick="openDialog(@dialog.Shortcuts)" />
-    <separator />
-    <menuItem label="About" onClick="openDialog(@dialog.About)" />
-  </menu>
-</menuBar>
+  <container type="menu" prompt="label Help">
+    <element prompt="shortcut F1, on click @action.openDocs">Documentation</element>
+    <element prompt="shortcut Ctrl+Slash, on click open @dialog.Shortcuts">Keyboard Shortcuts</element>
+    <element type="separator" />
+    <element prompt="on click open @dialog.About">About</element>
+  </container>
+</container>
 ```
-
-### MenuItem Attributes
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `label` | string | Menu item text |
-| `shortcut` | string | Keyboard shortcut |
-| `onClick` | action | Click handler |
-| `enabled` | boolean | Is enabled |
-| `checked` | boolean | Is checked (for toggles) |
-| `submenu` | boolean | Has submenu |
-| `icon` | string | Menu item icon |
 
 ---
 
-## Toolbar
+## Context Menus
 
-Quick access toolbar with action buttons.
+Right-click context menus.
 
 ```xml
-<toolbar>
-  <toolbarGroup>
-    <toolbarButton icon="plus" tooltip="New (Ctrl+N)" onClick="openDialog(@dialog.Create)" />
-    <toolbarButton icon="folder-open" tooltip="Open (Ctrl+O)" onClick="@action.open" />
-    <toolbarButton icon="save" tooltip="Save (Ctrl+S)" onClick="@action.save" disabled="!@state.isDirty" />
-  </toolbarGroup>
-  <toolbarSeparator />
-  <toolbarGroup>
-    <toolbarButton icon="undo" tooltip="Undo" onClick="@action.undo" disabled="!@state.canUndo" />
-    <toolbarButton icon="redo" tooltip="Redo" onClick="@action.redo" disabled="!@state.canRedo" />
-  </toolbarGroup>
-  <spacer />
-  <search placeholder="Search..." width="250px" onSearch="@action.search" />
-</toolbar>
+<context-menus>
+  <context-menu name="Item">
+    <element prompt="edit icon, on click @action.edit with @context.id">Edit</element>
+    <element prompt="copy icon, shortcut Ctrl+D, on click @action.duplicate with @context.id">Duplicate</element>
+    <element type="separator" />
+    <element prompt="arrow up icon, on click @action.moveUp with @context.id, enabled if @context.index > 0">Move Up</element>
+    <element prompt="arrow down icon, on click @action.moveDown with @context.id">Move Down</element>
+    <element type="separator" />
+    <element prompt="trash icon, style danger, shortcut Delete, on click @action.delete with @context.id">Delete</element>
+  </context-menu>
+</context-menus>
 ```
 
-### ToolbarButton Attributes
+### Using Context Menus
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `icon` | string | Button icon |
-| `tooltip` | string | Hover tooltip |
-| `onClick` | action | Click handler |
-| `disabled` | boolean | Is disabled |
-| `active` | boolean | Is active/pressed |
+```xml
+<container type="row" prompt="context menu @contextMenu.Item, on double click @action.edit">
+  <element type="text" use="@item.name" />
+</container>
+
+<!-- Or programmatically -->
+<element type="button" prompt="on click show context menu @contextMenu.Item with @item">Options</element>
+```
 
 ---
 
-## Layout
+## Tree View
 
-Main layout with split views and panels.
-
-```xml
-<layout name="MainLayout">
-  <column height="100%">
-    <!-- Custom Title Bar (for frameless window) -->
-    <titleBar draggable="true">
-      <row padding="sm" gap="md" align="center">
-        <icon name="app-icon" size="sm" />
-        <text variant="body" weight="medium">MyApp</text>
-        <spacer />
-        <windowControls />
-      </row>
-    </titleBar>
-
-    <!-- Toolbar -->
-    <toolbar>...</toolbar>
-
-    <!-- Main Content Area -->
-    <splitView direction="horizontal" grow="true">
-      <!-- Sidebar -->
-      <panel name="sidebar" width="260px" minWidth="200px" maxWidth="400px" resizable="true" collapsible="true">
-        <slot name="sidebar" />
-      </panel>
-
-      <!-- Main Content -->
-      <panel grow="true">
-        <slot name="content" />
-      </panel>
-
-      <!-- Properties Panel -->
-      <panel name="properties" width="300px" resizable="true" collapsible="true" visible="@state.propertiesVisible">
-        <slot name="properties" />
-      </panel>
-    </splitView>
-
-    <!-- Status Bar -->
-    <statusBar>
-      <statusBarItem>@state.itemCount items</statusBarItem>
-      <spacer />
-      <statusBarItem>
-        <if condition="@state.isDirty">
-          <text variant="caption" muted="true">Unsaved changes</text>
-        </if>
-        <else>
-          <text variant="caption" muted="true">Saved</text>
-        </else>
-      </statusBarItem>
-    </statusBar>
-  </column>
-</layout>
-```
-
-### SplitView
+Sidebar navigation with hierarchy.
 
 ```xml
-<splitView direction="horizontal|vertical">
-  <panel width="250px" resizable="true">...</panel>
-  <panel grow="true">...</panel>
-</splitView>
+<container type="tree-view">
+  <element prompt="home icon, selected if @state.view == dashboard, on click @action.setView dashboard">Dashboard</element>
+  <container prompt="folder icon, expanded">Projects
+    <element prompt="file icon, selected if @state.selectedProject == @item.id, on click @action.selectProject with @item.id, context menu @contextMenu.Project" for-each="@state.projects" use="@item.name" />
+  </container>
+  <element prompt="settings icon, on click open @window.Settings">Settings</element>
+</container>
 ```
-
-### Panel Attributes
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `name` | string | Panel identifier |
-| `width` | size | Fixed or initial width |
-| `minWidth` | size | Minimum width |
-| `maxWidth` | size | Maximum width |
-| `grow` | boolean | Fill available space |
-| `resizable` | boolean | Can resize |
-| `collapsible` | boolean | Can collapse |
-| `visible` | boolean | Is visible |
 
 ---
 
@@ -251,40 +351,26 @@ Main content views (replaces pages).
       <query name="items" type="@entity.Item[]" />
     </data>
 
-    <scroll padding="lg">
-      <column gap="lg" maxWidth="1200px">
-        <text variant="heading1">Dashboard</text>
+    <container type="scroll" prompt="padding large">
+      <container type="column" prompt="gap large, max width 1200px">
+        <element type="text" prompt="heading1">Dashboard</element>
         <!-- View content -->
-      </column>
-    </scroll>
+      </container>
+    </container>
   </view>
 
-  <view name="Editor">
-    <params>
-      <param name="id" type="uuid" required="true" />
-    </params>
-
-    <splitView direction="horizontal">
-      <panel width="220px" borderRight="true">
+  <view name="Editor" prompt="param id">
+    <container type="split-view" prompt="horizontal">
+      <container type="panel" prompt="width 220px, border right">
         <!-- Palette -->
-      </panel>
-      <panel grow="true">
+      </container>
+      <container type="panel" prompt="grow">
         <!-- Canvas -->
-      </panel>
-    </splitView>
+      </container>
+    </container>
   </view>
 </views>
 ```
-
-### Navigation Functions
-
-| Function | Description |
-|----------|-------------|
-| `setView('name')` | Switch to view |
-| `openWindow(@window.X)` | Open new window |
-| `openDialog(@dialog.X)` | Open modal dialog |
-| `closeDialog()` | Close current dialog |
-| `showContextMenu(@contextMenu.X, data)` | Show context menu |
 
 ---
 
@@ -294,33 +380,35 @@ Multi-window support for secondary windows.
 
 ```xml
 <windows>
-  <window name="Settings" title="Settings" width="700" height="500" resizable="false">
-    <row height="100%">
-      <!-- Settings Navigation -->
-      <column width="200px" background="@theme.colors.gray.50" padding="md">
-        <button variant="subtle" align="left" onClick="@action.setTab('general')">General</button>
-        <button variant="subtle" align="left" onClick="@action.setTab('appearance')">Appearance</button>
-        <button variant="subtle" align="left" onClick="@action.setTab('account')">Account</button>
-      </column>
+  <window name="Settings" prompt="title Settings, width 700, height 500, not resizable">
+    <container type="row" prompt="height 100%">
+      <container type="column" prompt="width 200px, background gray 50, padding medium">
+        <element type="button" prompt="style subtle, align left, on click @action.setTab general">General</element>
+        <element type="button" prompt="style subtle, align left, on click @action.setTab appearance">Appearance</element>
+        <element type="button" prompt="style subtle, align left, on click @action.setTab account">Account</element>
+      </container>
 
-      <!-- Settings Content -->
-      <column grow="true" padding="lg">
-        <switch value="@state.settingsTab">
-          <case value="general">...</case>
-          <case value="appearance">...</case>
-          <case value="account">...</case>
-        </switch>
-      </column>
-    </row>
+      <container type="column" prompt="grow, padding large">
+        <container if="@state.settingsTab == general">
+          <!-- General settings -->
+        </container>
+        <container if="@state.settingsTab == appearance">
+          <!-- Appearance settings -->
+        </container>
+        <container if="@state.settingsTab == account">
+          <!-- Account settings -->
+        </container>
+      </container>
+    </container>
   </window>
 
-  <window name="Preview" title="Preview" width="500" height="700">
-    <toolbar>
-      <toolbarButton icon="smartphone" tooltip="Mobile" onClick="@action.setSize('mobile')" />
-      <toolbarButton icon="tablet" tooltip="Tablet" onClick="@action.setSize('tablet')" />
-      <toolbarButton icon="monitor" tooltip="Desktop" onClick="@action.setSize('desktop')" />
-    </toolbar>
-    <container grow="true">
+  <window name="Preview" prompt="title Preview, width 500, height 700">
+    <container type="toolbar">
+      <element type="toolbar-button" prompt="smartphone icon, tooltip Mobile, on click @action.setSize mobile" />
+      <element type="toolbar-button" prompt="tablet icon, tooltip Tablet, on click @action.setSize tablet" />
+      <element type="toolbar-button" prompt="monitor icon, tooltip Desktop, on click @action.setSize desktop" />
+    </container>
+    <container prompt="grow">
       <!-- Preview content -->
     </container>
   </window>
@@ -335,256 +423,121 @@ Modal dialog boxes.
 
 ```xml
 <dialogs>
-  <dialog name="Create" title="Create New Item" width="450">
-    <form onSubmit="@action.create" onSuccess="closeDialog()">
-      <column gap="md" padding="lg">
-        <input label="Name" bind="name" required="true" autoFocus="true" />
-        <textarea label="Description" bind="description" rows="3" />
+  <dialog name="Create" prompt="title Create New Item, width 450">
+    <container type="form" prompt="on submit @action.create, on success close dialog">
+      <container type="column" prompt="gap medium, padding large">
+        <element type="input" prompt="required, auto focus">Name</element>
+        <element type="textarea" prompt="rows 3">Description</element>
 
-        <row justify="end" gap="sm" marginTop="md">
-          <button variant="outline" onClick="closeDialog()">Cancel</button>
-          <button type="submit" variant="primary">Create</button>
-        </row>
-      </column>
-    </form>
+        <container type="row" prompt="justify end, gap small, margin top medium">
+          <element type="button" prompt="style outline, on click close dialog">Cancel</element>
+          <element type="button" prompt="submit, style primary">Create</element>
+        </container>
+      </container>
+    </container>
   </dialog>
 
-  <dialog name="ConfirmDelete" title="Delete Item?" width="400">
-    <column padding="lg" gap="md">
-      <text>Are you sure you want to delete this item? This action cannot be undone.</text>
-      <row justify="end" gap="sm">
-        <button variant="outline" onClick="closeDialog()">Cancel</button>
-        <button variant="danger" onClick="@action.delete; closeDialog()">Delete</button>
-      </row>
-    </column>
+  <dialog name="ConfirmDelete" prompt="title Delete Item?, width 400">
+    <container type="column" prompt="padding large, gap medium">
+      <element type="text">Are you sure you want to delete this item? This action cannot be undone.</element>
+      <container type="row" prompt="justify end, gap small">
+        <element type="button" prompt="style outline, on click close dialog">Cancel</element>
+        <element type="button" prompt="style danger, on click @action.delete then close dialog">Delete</element>
+      </container>
+    </container>
   </dialog>
 
-  <dialog name="About" title="About MyApp" width="400">
-    <column align="center" gap="md" padding="xl">
-      <icon name="app-icon" size="xl" />
-      <text variant="heading2">MyApp</text>
-      <text variant="body" muted="true">Version 1.0.0</text>
-      <button variant="outline" onClick="closeDialog()">Close</button>
-    </column>
+  <dialog name="About" prompt="title About MyApp, width 400">
+    <container type="column" prompt="align center, gap medium, padding extra large">
+      <element type="icon" prompt="app-icon, size extra large" />
+      <element type="text" prompt="heading2">MyApp</element>
+      <element type="text" prompt="body, muted">Version 1.0.0</element>
+      <element type="button" prompt="style outline, on click close dialog">Close</element>
+    </container>
   </dialog>
 </dialogs>
 ```
-
-### Dialog Attributes
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `name` | string | Dialog identifier |
-| `title` | string | Dialog title |
-| `width` | number | Dialog width |
-| `height` | number | Dialog height (optional) |
-| `resizable` | boolean | Can resize |
-
----
-
-## Context Menus
-
-Right-click context menus.
-
-```xml
-<contextMenus>
-  <contextMenu name="Item">
-    <menuItem icon="edit" label="Edit" onClick="@action.edit(@context.id)" />
-    <menuItem icon="copy" label="Duplicate" shortcut="Ctrl+D" onClick="@action.duplicate(@context.id)" />
-    <separator />
-    <menuItem icon="arrow-up" label="Move Up" onClick="@action.moveUp(@context.id)" enabled="@context.index > 0" />
-    <menuItem icon="arrow-down" label="Move Down" onClick="@action.moveDown(@context.id)" />
-    <separator />
-    <menuItem icon="trash" label="Delete" color="danger" shortcut="Delete" onClick="@action.delete(@context.id)" />
-  </contextMenu>
-</contextMenus>
-```
-
-### Usage
-
-```xml
-<tr contextMenu="@contextMenu.Item" onDoubleClick="@action.edit">
-  <td>@item.name</td>
-</tr>
-
-<!-- Or programmatically -->
-<button onClick="showContextMenu(@contextMenu.Item, @item)">Options</button>
-```
-
-### Context Reference
-
-Inside context menu handlers, use `@context` to access the data passed to the menu.
-
----
-
-## Tree View
-
-Sidebar navigation with hierarchy.
-
-```xml
-<treeView>
-  <treeItem icon="home" label="Dashboard" selected="@state.view == 'dashboard'" onClick="@action.setView('dashboard')" />
-  <treeItem icon="folder" label="Projects" expanded="true">
-    <for each="project" in="@state.projects">
-      <treeItem
-        icon="file"
-        label="@item.name"
-        selected="@state.selectedProject == @item.id"
-        onClick="@action.selectProject(@item.id)"
-        contextMenu="@contextMenu.Project"
-      />
-    </for>
-  </treeItem>
-  <treeItem icon="settings" label="Settings" onClick="openWindow(@window.Settings)" />
-</treeView>
-```
-
-### TreeItem Attributes
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `icon` | string | Item icon |
-| `label` | string | Item text |
-| `selected` | boolean | Is selected |
-| `expanded` | boolean | Is expanded (for parent items) |
-| `onClick` | action | Click handler |
-| `contextMenu` | @contextMenu | Right-click menu |
 
 ---
 
 ## Drag and Drop
 
-Drag and drop support for desktop interactions.
-
 ```xml
 <!-- Draggable item -->
-<draggable type="item" data="@item">
-  <container variant="card" padding="sm">
-    <text value="@item.name" />
+<container type="draggable" prompt="type item, data @item">
+  <container type="card" prompt="padding small">
+    <element type="text" use="@item.name" />
   </container>
-</draggable>
+</container>
 
 <!-- Drop zone -->
-<dropZone accept="item" onDrop="@action.handleDrop">
-  <container padding="md" borderStyle="dashed">
-    <text muted="true">Drop items here</text>
+<container type="drop-zone" prompt="accept item, on drop @action.handleDrop">
+  <container prompt="padding medium, border dashed">
+    <element type="text" prompt="muted">Drop items here</element>
   </container>
-</dropZone>
+</container>
 
 <!-- Reorderable list -->
-<list data="@state.items" reorderable="true" onReorder="@action.reorder">
-  <for each="item" in="@data">
-    <draggable type="item" data="@item" reorderable="true">
-      <listItem title="@item.name" />
-    </draggable>
-  </for>
-</list>
+<container type="list" prompt="reorderable, on reorder @action.reorder" for-each="@state.items">
+  <container type="draggable" prompt="type item, data @item, reorderable">
+    <container type="list-item">
+      <element type="text" use="@item.name" />
+    </container>
+  </container>
+</container>
 ```
-
-### Draggable Attributes
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `type` | string | Drag type identifier |
-| `data` | any | Data to transfer |
-| `reorderable` | boolean | For list reordering |
-
-### DropZone Attributes
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `accept` | string | Accepted drag types |
-| `onDrop` | action | Drop handler |
 
 ---
 
-## Status Bar
+## Actions
 
-Application status bar.
+Reusable action definitions.
 
 ```xml
-<statusBar>
-  <statusBarItem>
-    <text variant="caption">@state.itemCount items</text>
-  </statusBarItem>
-  <statusBarItem>
-    <badge value="@state.status" size="xs" />
-  </statusBarItem>
-  <spacer />
-  <statusBarItem>
-    <if condition="@state.syncing">
-      <row gap="xs" align="center">
-        <spinner size="xs" />
-        <text variant="caption">Syncing...</text>
-      </row>
-    </if>
-    <else>
-      <text variant="caption" muted="true">Last saved: @state.lastSaved</text>
-    </else>
-  </statusBarItem>
-</statusBar>
+<actions>
+  <action name="save" prompt="save current document, show success toast" />
+  <action name="open" prompt="show file picker, load selected file" />
+  <action name="delete" prompt="show confirm dialog, delete item, refresh list" />
+  <action name="undo" prompt="undo last action" />
+  <action name="redo" prompt="redo last undone action" />
+</actions>
 ```
 
 ---
 
-## Element Reference (Desktop)
+## Guards
 
-### Window Elements
+Authentication and authorization guards.
 
-| Element | Description | Key Attributes |
-|---------|-------------|----------------|
-| `window` | Secondary window | `name`, `title`, `width`, `height` |
-| `titleBar` | Custom title bar | `draggable` |
-| `windowControls` | Min/max/close buttons | - |
+```xml
+<guards>
+  <guard name="auth" prompt="if not authenticated, show login dialog" />
+  <guard name="unsaved" prompt="if has unsaved changes, show save dialog" />
+</guards>
+```
 
-### Menu Elements
+### Using Guards
 
-| Element | Description | Key Attributes |
-|---------|-------------|----------------|
-| `menuBar` | Application menu | - |
-| `menu` | Menu dropdown | `label` |
-| `menuItem` | Menu option | `label`, `shortcut`, `onClick`, `enabled`, `checked` |
-| `separator` | Menu separator | - |
+```xml
+<view name="Editor">
+  <guards>
+    <guard type="@guard.auth" />
+  </guards>
+  <!-- View content -->
+</view>
+```
 
-### Toolbar Elements
+---
 
-| Element | Description | Key Attributes |
-|---------|-------------|----------------|
-| `toolbar` | Toolbar container | - |
-| `toolbarButton` | Toolbar action | `icon`, `tooltip`, `onClick`, `disabled`, `active` |
-| `toolbarGroup` | Button group | - |
-| `toolbarSeparator` | Toolbar divider | - |
+## Navigation Functions
 
-### Layout Elements
-
-| Element | Description | Key Attributes |
-|---------|-------------|----------------|
-| `splitView` | Resizable split | `direction` |
-| `panel` | Split panel | `width`, `minWidth`, `maxWidth`, `resizable`, `collapsible` |
-| `statusBar` | Status bar | - |
-| `statusBarItem` | Status item | - |
-
-### Navigation Elements
-
-| Element | Description | Key Attributes |
-|---------|-------------|----------------|
-| `view` | Content view | `name` |
-| `treeView` | Tree navigation | - |
-| `treeItem` | Tree node | `icon`, `label`, `selected`, `expanded` |
-
-### Dialog Elements
-
-| Element | Description | Key Attributes |
-|---------|-------------|----------------|
-| `dialog` | Modal dialog | `name`, `title`, `width` |
-| `contextMenu` | Right-click menu | `name` |
-
-### Drag & Drop
-
-| Element | Description | Key Attributes |
-|---------|-------------|----------------|
-| `draggable` | Draggable item | `type`, `data`, `reorderable` |
-| `dropZone` | Drop target | `accept`, `onDrop` |
+| Function | Description |
+|----------|-------------|
+| `set view X` | Switch to view |
+| `open @window.X` | Open new window |
+| `open @dialog.X` | Open modal dialog |
+| `close dialog` | Close current dialog |
+| `show context menu @contextMenu.X` | Show context menu |
 
 ---
 
@@ -594,85 +547,96 @@ Complete desktop spec structure:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<webapp name="MyApp" version="1.0">
+<desktopapp name="MyApp" version="1.0">
   <import src="./myapp.shared.spec.xml" />
 
   <config>
-    <window title="MyApp" width="1200" height="800" minWidth="800" minHeight="600" />
-    <tray icon="app-icon" tooltip="MyApp" />
+    <window prompt="title MyApp, width 1200, height 800, min width 800, min height 600" />
+    <tray prompt="icon app-icon, tooltip MyApp" />
   </config>
 
-  <menuBar>
-    <menu label="File">
-      <menuItem label="New" shortcut="Ctrl+N" onClick="openDialog(@dialog.Create)" />
-      <menuItem label="Save" shortcut="Ctrl+S" onClick="@action.save" />
-      <separator />
-      <menuItem label="Settings" shortcut="Ctrl+," onClick="openWindow(@window.Settings)" />
-      <separator />
-      <menuItem label="Exit" shortcut="Alt+F4" onClick="@action.quit" />
-    </menu>
-    <menu label="Edit">
-      <menuItem label="Undo" shortcut="Ctrl+Z" onClick="@action.undo" />
-      <menuItem label="Redo" shortcut="Ctrl+Shift+Z" onClick="@action.redo" />
-    </menu>
-  </menuBar>
+  <guards>
+    <guard name="auth" prompt="if not authenticated, show login dialog" />
+  </guards>
+
+  <actions>
+    <action name="save" prompt="save document, show success toast" />
+    <action name="create" prompt="submit form, close dialog, refresh list" />
+    <action name="delete" prompt="show confirm dialog, delete item, refresh list" />
+  </actions>
+
+  <container type="menu-bar">
+    <container type="menu" prompt="label File">
+      <element prompt="shortcut Ctrl+N, on click open @dialog.Create">New</element>
+      <element prompt="shortcut Ctrl+S, on click @action.save">Save</element>
+      <element type="separator" />
+      <element prompt="shortcut Ctrl+Comma, on click open @window.Settings">Settings</element>
+      <element type="separator" />
+      <element prompt="shortcut Alt+F4, on click @action.quit">Exit</element>
+    </container>
+    <container type="menu" prompt="label Edit">
+      <element prompt="shortcut Ctrl+Z, on click @action.undo">Undo</element>
+      <element prompt="shortcut Ctrl+Shift+Z, on click @action.redo">Redo</element>
+    </container>
+  </container>
 
   <layout name="MainLayout">
-    <column height="100%">
-      <toolbar>
-        <toolbarButton icon="plus" tooltip="New" onClick="openDialog(@dialog.Create)" />
-        <toolbarButton icon="save" tooltip="Save" onClick="@action.save" />
-      </toolbar>
+    <container type="column" prompt="height 100%">
+      <container type="toolbar">
+        <element prompt="plus icon, tooltip New, on click open @dialog.Create" />
+        <element prompt="save icon, tooltip Save, on click @action.save" />
+      </container>
 
-      <splitView direction="horizontal" grow="true">
-        <panel width="250px" resizable="true">
-          <treeView>
-            <treeItem icon="home" label="Dashboard" onClick="@action.setView('dashboard')" />
-            <treeItem icon="folder" label="Items" expanded="true">
-              <for each="item" in="@state.items">
-                <treeItem label="@item.name" onClick="@action.select(@item.id)" contextMenu="@contextMenu.Item" />
-              </for>
-            </treeItem>
-          </treeView>
-        </panel>
-        <panel grow="true">
+      <container type="split-view" prompt="horizontal, grow">
+        <container type="panel" prompt="width 250px, resizable">
+          <container type="tree-view">
+            <element prompt="home icon, on click @action.setView dashboard">Dashboard</element>
+            <container prompt="folder icon, expanded">Items
+              <element prompt="on click @action.select with @item.id, context menu @contextMenu.Item" for-each="@state.items" use="@item.name" />
+            </container>
+          </container>
+        </container>
+        <container type="panel" prompt="grow">
           <slot name="content" />
-        </panel>
-      </splitView>
+        </container>
+      </container>
 
-      <statusBar>
-        <statusBarItem>@state.items.length items</statusBarItem>
-        <spacer />
-        <statusBarItem>Ready</statusBarItem>
-      </statusBar>
-    </column>
+      <container type="status-bar">
+        <element>@state.items.length items</element>
+        <element type="spacer" />
+        <element>Ready</element>
+      </container>
+    </container>
   </layout>
 
   <views>
     <view name="Dashboard">
-      <scroll padding="lg">
-        <text variant="heading1">Dashboard</text>
-      </scroll>
+      <guards>
+        <guard type="@guard.auth" />
+      </guards>
+      <container type="scroll" prompt="padding large">
+        <element type="text" prompt="heading1">Dashboard</element>
+      </container>
     </view>
   </views>
 
   <dialogs>
-    <dialog name="Create" title="New Item" width="450">
-      <form onSubmit="@action.create" onSuccess="closeDialog()">
-        <input label="Name" bind="name" required="true" autoFocus="true" />
-        <row justify="end" gap="sm">
-          <button variant="outline" onClick="closeDialog()">Cancel</button>
-          <button type="submit" variant="primary">Create</button>
-        </row>
-      </form>
+    <dialog name="Create" prompt="title New Item, width 450">
+      <container type="form" prompt="on submit @action.create, on success close dialog">
+        <element type="input" prompt="required, auto focus">Name</element>
+        <container type="row" prompt="justify end, gap small">
+          <element type="button" prompt="style outline, on click close dialog">Cancel</element>
+          <element type="button" prompt="submit, style primary">Create</element>
+        </container>
+      </container>
     </dialog>
   </dialogs>
 
-  <contextMenus>
-    <contextMenu name="Item">
-      <menuItem icon="edit" label="Edit" onClick="@action.edit(@context.id)" />
-      <menuItem icon="trash" label="Delete" color="danger" onClick="@action.delete(@context.id)" />
-    </contextMenu>
-  </contextMenus>
-</webapp>
+  <context-menus>
+    <context-menu name="Item">
+      <element prompt="edit icon, on click @action.edit with @context.id">Edit</element>
+      <element prompt="trash icon, style danger, on click @action.delete with @context.id">Delete</element>
+    </context-menu>
+  </context-menus>
+</desktopapp>
 ```

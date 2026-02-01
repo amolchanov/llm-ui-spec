@@ -707,8 +707,6 @@
 
   <!-- Allow any other elements with any attributes for flexibility -->
   <!-- Layout containers -->
-  <xs:element name="row" type="anyContent" />
-  <xs:element name="column" type="anyContent" />
   <xs:element name="stack" type="anyContent" />
   <xs:element name="grid" type="anyContent" />
   <xs:element name="card" type="anyContent" />
