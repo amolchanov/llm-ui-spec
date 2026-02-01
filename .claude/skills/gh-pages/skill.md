@@ -1,5 +1,5 @@
 ---
-name: docs
+name: gh-pages
 user-invocable: true
 description: Sync spec files to VitePress docs folder and deploy to GitHub Pages. Use when the user wants to update or deploy documentation.
 ---
