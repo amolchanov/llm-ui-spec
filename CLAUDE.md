@@ -39,3 +39,20 @@ Refactor selection store to preserve edit context
 - `editor/src/lib/` - Utilities, XML parsing, DnD context
 - `editor/src/types/` - TypeScript type definitions
 - `samples/` - Sample XML files for testing
+- `docs/` - VitePress documentation site
+
+## Documentation Site
+
+The spec documentation is hosted at https://llm-ui-spec.org/ using VitePress.
+
+### Commands
+```bash
+npm run docs:dev    # Start local dev server
+npm run docs:build  # Build for production
+```
+
+### Skill: /docs
+Use `/docs` to sync and deploy documentation:
+- `/docs` - Sync spec files from root to docs/
+- `/docs build` - Sync and build locally
+- `/docs deploy` - Sync, commit, and push to deploy
