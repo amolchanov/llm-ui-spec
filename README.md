@@ -10,6 +10,22 @@ LLM UI Spec allows you to define UI at varying levels of specificity:
 - **Prompt-guided**: Natural language descriptions for LLM interpretation
 - **Hybrid**: Mix of defined structure with prompt-guided sections
 
+## Why LLM UI Spec?
+
+**Keep LLMs grounded.** Without a spec, LLMs make assumptions about your UI that drift from your intent. Each generation becomes harder to control.
+
+LLM UI Spec provides:
+
+| Benefit | Without Spec | With Spec |
+|---------|--------------|-----------|
+| **Consistency** | LLM invents new patterns each time | Follows your defined components and layouts |
+| **Control** | "Make it look nice" → unpredictable | Explicit structure with creative prompts where needed |
+| **Iteration** | Start over or fight hallucinations | Refine progressively from L1 → L4 |
+| **Cross-platform** | Rewrite everything per platform | Shared entities, platform-specific UI |
+| **Constraints** | Hope LLM follows best practices | Enforce with `Must` / `Must NOT` rules |
+
+The spec is your **single source of truth**. LLMs reference it to generate consistent, predictable code while still having creative freedom where you allow it.
+
 ## Features
 
 - **Visual Editor** - React-based editor for creating and editing specs with drag-and-drop
