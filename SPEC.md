@@ -190,11 +190,16 @@ myapp.spec.xml
 Larger projects can split definitions into separate files:
 
 ```
-myapp.spec.xml                              # Main spec file
-myapp.entities.spec.xml                     # All entities (section file)
-myapp.entity.User.spec.xml                  # Single entity definition
-myapp.component.Header.spec.xml             # Single component definition
-myapp.page.Dashboard.spec.xml               # Single page definition
+myapp/
+├── myapp.shared.spec.xml                   # Shared entities, components, theme
+├── myapp.spec.xml                          # Webapp (default platform)
+├── myapp.mobile.spec.xml                   # Mobile screens, tabs, sheets
+├── myapp.desktop.spec.xml                  # Desktop windows, menus, toolbars
+│
+├── myapp.entities.spec.xml                 # All entities (section file)
+├── myapp.entity.User.spec.xml              # Single entity definition
+├── myapp.component.Header.spec.xml         # Single component definition
+└── myapp.page.Dashboard.spec.xml           # Single page definition
 ```
 
 ### External File Format
