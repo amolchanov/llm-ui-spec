@@ -5,9 +5,9 @@ A declarative XML specification for defining UI structure that can be interprete
 ## Platform-Specific Documentation
 
 For platform-specific elements and patterns, see:
-- **[Webapp](./webapp)** - Web applications (layouts, pages, modals, routing)
-- **[Mobile](./mobile)** - Mobile applications (screens, tabs, sheets, swipe actions)
-- **[Desktop](./desktop)** - Desktop applications (windows, menus, toolbars, context menus)
+- **[SPEC.webapp.md](./webapp)** - Web applications (layouts, pages, modals, routing)
+- **[SPEC.mobile.md](./mobile)** - Mobile applications (screens, tabs, sheets, swipe actions)
+- **[SPEC.desktop.md](./desktop)** - Desktop applications (windows, menus, toolbars, context menus)
 
 This document covers shared concepts used across all platforms.
 
