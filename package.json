@@ -1,6 +1,9 @@
 {
   "name": "llm-ui-spec",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=18 <24"
+  },
   "description": "A declarative XML specification for defining UI structure that can be interpreted by LLMs to generate platform-specific code.",
   "main": "index.js",
   "directories": {
