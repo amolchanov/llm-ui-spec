@@ -1,12 +1,8 @@
 # LLM UI Spec - Webapp Platform
 
-::: info Preview
-This specification is under active development and may change.
-:::
+Platform-specific types and patterns for web applications.
 
-Platform-specific elements and patterns for web applications.
-
-See [Core Specification](./) for shared concepts (entities, components, prompts, etc.).
+See [Introduction](./) for core concepts (primitives, entities, prompts, etc.).
 
 ---
 
@@ -18,9 +14,430 @@ Key characteristics:
 - URL-based routing with browser history
 - Sidebar/header layouts with slots
 - Modal dialogs for overlays
-- Dropdown menus for actions
 - Table-based data display with pagination
-- Horizontal tabs for content organization
+
+---
+
+## Common Attributes
+
+All elements and containers support these optional attributes:
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `name` | string | Identifier for referencing |
+| `type` | string | Element or container type |
+| `prompt` | string | Natural language behavior description |
+| `use` | reference | Data binding |
+| `if` | expression | Render only if true |
+| `if-not` | expression | Render only if false |
+| `for-each` | collection | Iterate over items |
+
+All attributes (except `name`) can be expressed in prompt:
+
+```xml
+<!-- Attribute syntax -->
+<element type="text" use="@user.name" />
+<element type="spinner" if="@state.loading" />
+<container type="card" for-each="@state.items" />
+
+<!-- Prompt syntax (equivalent) -->
+<element type="text" prompt="use @user.name" />
+<element type="spinner" prompt="if @state.loading" />
+<container type="card" prompt="for each @state.items" />
+
+<!-- Type in prompt -->
+<element prompt="text, use @user.name" />
+<element prompt="spinner, if @state.loading" />
+<container prompt="card, for each @state.items" />
+```
+
+Type is optional when parent context makes it clear:
+
+```xml
+<!-- Inside accordion, children are accordion content -->
+<container type="accordion">
+  <container prompt="label Section 1">Content 1</container>
+  <container prompt="label Section 2">Content 2</container>
+</container>
+
+<!-- Inside tabs, children are tab content -->
+<container type="tabs">
+  <container prompt="label Overview">Overview content</container>
+  <container prompt="label Settings">Settings content</container>
+</container>
+
+<!-- Inside dropdown, children are dropdown items -->
+<container type="dropdown">
+  <element prompt="edit icon">Edit</element>
+  <element prompt="trash icon, style danger">Delete</element>
+</container>
+```
+
+---
+
+## Container Types
+
+### Layout Types
+
+Basic layout containers for arranging children.
+
+| Type | Description |
+|------|-------------|
+| `row` | Horizontal flex layout |
+| `column` | Vertical flex layout |
+| `grid` | Grid layout |
+| `stack` | Layered z-index layout |
+
+```xml
+<container type="row" prompt="medium gap, vertically centered">
+  <element type="image" use="@user.avatar" />
+  <element type="text" use="@user.name" />
+</container>
+
+<container type="grid" prompt="3 columns, large gap">
+  <container type="card" for-each="@state.items">...</container>
+</container>
+```
+
+Use `prompt` for all layout styling (columns, gap, padding, alignment):
+
+```xml
+<container type="row" prompt="medium gap, center aligned">...</container>
+<container type="grid" prompt="3 columns, large gap">...</container>
+```
+
+---
+
+### Structural Types
+
+| Type | Description |
+|------|-------------|
+| `card` | Card with border/shadow |
+| `section` | Semantic section |
+| `form` | Form container |
+| `scroll-area` | Scrollable region |
+| `aspect-ratio` | Maintains width/height ratio |
+| `collapsible` | Expandable/collapsible section |
+
+```xml
+<container type="card" prompt="large padding">
+  <element type="text" prompt="heading">Card Title</element>
+  <element type="text">Card content here</element>
+</container>
+
+<container type="form" prompt="on submit @action.save, on success navigate to @page.List">
+  <element type="input" prompt="required">Name</element>
+  <element type="button" prompt="style primary">Save</element>
+</container>
+
+<container type="aspect-ratio" prompt="ratio 16/9">
+  <element type="image" use="@video.thumbnail" prompt="fit cover" />
+</container>
+
+<container type="collapsible" prompt="open by default">
+  <container type="collapsible-content" prompt="label Toggle details">
+    <element type="text">Hidden content here</element>
+  </container>
+</container>
+```
+
+---
+
+### Interactive Types
+
+Complex containers with built-in behavior.
+
+#### Accordion
+
+```xml
+<container type="accordion" prompt="collapsible">
+  <container prompt="label Section 1">
+    <element>Content for section 1</element>
+  </container>
+  <container prompt="label Section 2">
+    <element>Content for section 2</element>
+  </container>
+</container>
+```
+
+#### Tabs
+
+```xml
+<container type="tabs">
+  <container prompt="label Overview">
+    <element>Overview content</element>
+  </container>
+  <container prompt="label Settings">
+    <element>Settings content</element>
+  </container>
+</container>
+```
+
+#### Carousel
+
+```xml
+<container type="carousel" for-each="@state.slides" prompt="loop, show arrows">
+  <element use="@item.image" />
+</container>
+```
+
+Use `prompt` for behavior (loop, autoplay, arrows, indicators).
+
+#### Resizable
+
+```xml
+<container type="resizable" prompt="horizontal, with visible handles">
+  <container prompt="25% width, min 15%">
+    <element>Sidebar</element>
+  </container>
+  <container prompt="75% width">
+    <element>Main content</element>
+  </container>
+</container>
+```
+
+Handles are implicit between panels. Use `prompt` for direction and sizing.
+
+#### Command (Palette)
+
+```xml
+<container type="command" prompt="open with ⌘K">
+  <element prompt="input, placeholder 'Type a command...'" />
+  <container prompt="list">
+    <container prompt="group Actions">
+      <element prompt="on select @action.newFile, file-plus icon">New File</element>
+      <element prompt="on select @action.search, search icon">Search</element>
+    </container>
+  </container>
+</container>
+```
+
+#### Context Menu
+
+```xml
+<container type="context-menu">
+  <container prompt="trigger">
+    <element>Right-click me</element>
+  </container>
+  <container prompt="content">
+    <element prompt="on select @action.cut, shortcut ⌘X">Cut</element>
+    <element prompt="on select @action.copy, shortcut ⌘C">Copy</element>
+    <element type="separator" />
+    <element prompt="on select @action.delete, style danger">Delete</element>
+  </container>
+</container>
+```
+
+---
+
+### Data Display Types
+
+#### Table
+
+```xml
+<container type="table">
+  <container prompt="header">
+    <element>Name</element>
+    <element>Status</element>
+    <element prompt="width 50px" />
+  </container>
+  <container prompt="row" for-each="@state.items">
+    <element>@item.name</element>
+    <element>
+      <element type="badge" use="@item.status" />
+    </element>
+    <element>
+      <container type="dropdown">...</container>
+    </element>
+  </container>
+</container>
+```
+
+- `table-header` contains `table-head` cells directly (implicit single row)
+- `table-row` elements are direct children of `table` (no wrapper needed)
+
+#### Data Table
+
+Full-featured table with sorting, filtering, pagination.
+
+```xml
+<container type="data-table" use="@state.users" prompt="25 per page, sortable, filterable by name and status, row selection, bulk actions" />
+```
+
+#### Chart
+
+```xml
+<container type="chart" use="@state.salesData" prompt="bar chart, 300px height, tooltip on hover, legend at bottom" />
+```
+
+---
+
+### Overlay Types
+
+#### Modal
+
+```xml
+<container type="modal" name="CreateProject" prompt="title 'New Project', medium size">
+  <container type="form" prompt="on submit @action.createProject, on success close modal">
+    <element type="input" prompt="required">Project Name</element>
+    <element type="button" prompt="style primary">Create</element>
+  </container>
+</container>
+
+<!-- Open modal -->
+<element type="button" prompt="on click open modal @modal.CreateProject">New Project</element>
+```
+
+Use `prompt` for size, closable, title, etc.
+
+#### Dropdown
+
+```xml
+<container type="dropdown" prompt="trigger click">
+  <element type="button" prompt="more-vertical icon, style ghost" />
+  <container prompt="content">
+    <element prompt="on click @action.edit, edit icon">Edit</element>
+    <element prompt="on click @action.duplicate, copy icon">Duplicate</element>
+    <element type="separator" />
+    <element prompt="on click @action.delete, trash icon, style danger">Delete</element>
+  </container>
+</container>
+```
+
+#### Popover
+
+```xml
+<container type="popover" prompt="trigger click">
+  <element type="button">Open Popover</element>
+  <container prompt="content">
+    <element>Popover content here</element>
+  </container>
+</container>
+```
+
+#### Tooltip
+
+```xml
+<container type="tooltip" prompt="content 'This is a tooltip'">
+  <element type="button" prompt="info icon, style ghost" />
+</container>
+```
+
+---
+
+### Navigation Types
+
+#### Nav
+
+```xml
+<container type="nav" prompt="vertical">
+  <element type="nav-item" to="@page.Dashboard" prompt="home icon">Dashboard</element>
+  <element type="nav-item" to="@page.Projects" prompt="folder icon">Projects</element>
+  <element type="nav-item" to="@page.Settings" prompt="settings icon">Settings</element>
+</container>
+```
+
+#### Breadcrumb
+
+```xml
+<container type="breadcrumb">
+  <element type="breadcrumb-item" to="@page.Dashboard">Dashboard</element>
+  <element type="breadcrumb-item" to="@page.Projects">Projects</element>
+  <element type="breadcrumb-item" prompt="current page">Current Project</element>
+</container>
+```
+
+---
+
+## Element Types
+
+### Display Elements
+
+| Type | Description | Key Attributes |
+|------|-------------|----------------|
+| `text` | Text display | `use` |
+| `icon` | Icon display | - |
+| `image` | Image display | `use` |
+| `badge` | Status badge | `use` |
+| `alert` | Status callout message | - |
+| `separator` | Visual divider | - |
+| `spinner` | Loading indicator | - |
+| `skeleton` | Loading placeholder | - |
+| `avatar` | User avatar | `use` |
+| `progress` | Progress bar | `use` |
+| `kbd` | Keyboard key display | - |
+
+Use `prompt` for styling (size, color, variant):
+
+```xml
+<element type="text" prompt="page title, large">Welcome</element>
+<element type="badge" prompt="style success">Active</element>
+<element type="avatar" use="@user.avatar" prompt="fallback @user.initials, large" />
+<element type="progress" prompt="value 75, max 100" />
+<element type="alert" prompt="title 'Warning', style warning">Please review before submitting.</element>
+<container type="row" prompt="small gap">
+  <element type="text">Press</element>
+  <element type="kbd">⌘</element>
+  <element type="kbd">K</element>
+  <element type="text">to open</element>
+</container>
+```
+
+### Input Elements
+
+| Type | Description | Key Attributes |
+|------|-------------|----------------|
+| `input` | Text input | - |
+| `textarea` | Multi-line input | - |
+| `select` | Dropdown select | - |
+| `combobox` | Searchable select | - |
+| `checkbox` | Checkbox input | - |
+| `radio` | Radio button | - |
+| `switch` | Toggle switch | - |
+| `toggle` | Pressable toggle button | - |
+| `slider` | Range slider | - |
+| `otp-input` | One-time password input | - |
+| `date-picker` | Date input | - |
+| `calendar` | Date calendar | - |
+| `label` | Form field label | - |
+
+Use `prompt` for: bind, label, value, required, placeholder, min/max, length, etc.
+
+```xml
+<element type="input" prompt="required">Email</element>
+<element type="select" prompt="options @state.statusOptions">Status</element>
+<element type="slider" prompt="min 0, max 100">Volume</element>
+<element type="date-picker" prompt="format MMM dd yyyy">Due Date</element>
+
+<!-- Radio group -->
+<container type="column" prompt="small gap">
+  <element type="label">Select size</element>
+  <element type="radio" prompt="value sm">Small</element>
+  <element type="radio" prompt="value md">Medium</element>
+  <element type="radio" prompt="value lg">Large</element>
+</container>
+
+<!-- Toggle button -->
+<element type="toggle" prompt="bold icon" />
+
+<!-- OTP input -->
+<element type="otp-input" prompt="length 6">Verification Code</element>
+```
+
+### Action Elements
+
+| Type | Description | Key Attributes |
+|------|-------------|----------------|
+| `button` | Clickable button | - |
+| `link` | Navigation link | `to` |
+| `nav-item` | Navigation link | `to` |
+
+```xml
+<element type="button" prompt="on click @action.save, style primary">Save</element>
+<element type="button" prompt="on click @action.export, style outline, download icon">Export</element>
+<element type="button" prompt="on click @action.delete, style danger">Delete</element>
+<element type="link" to="@page.Settings">Settings</element>
+```
 
 ---
 
@@ -31,104 +448,56 @@ Reusable page structure templates with slots.
 ```xml
 <layouts>
   <layout name="AppShell">
-    <slot name="header" position="top" sticky="true" />
-    <container layout="row">
-      <slot name="sidebar" width="250px" collapsible="true" />
-      <slot name="content" grow="true" scroll="true" />
+    <container type="row" prompt="min height 100vh">
+      <slot name="sidebar" prompt="width 240px, collapsible" />
+      <container type="column" prompt="grow">
+        <slot name="header" prompt="height 64px, sticky" />
+        <slot name="content" prompt="grow, scroll" />
+      </container>
     </container>
-    <slot name="footer" position="bottom" />
   </layout>
 </layouts>
 ```
 
-### Slot Attributes
+### Filling Slots
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `name` | string | Slot identifier (required) |
-| `position` | top/bottom/left/right | Fixed position |
-| `sticky` | boolean | Stick to viewport |
-| `width` | size | Fixed width |
-| `height` | size | Fixed height |
-| `grow` | boolean | Fill available space |
-| `scroll` | boolean | Enable scrolling |
-| `collapsible` | boolean | Can be collapsed |
-| `optional` | boolean | Slot is optional |
-| `role` | content/chrome | Editor behavior |
-| `prompt` | string | LLM guidance for slot content |
-
-### Filling Slots with Target
-
-Layouts define **named slots** as placeholders. Pages **fill those slots** using the `target` attribute.
-
-**Layout defines slots:**
-```xml
-<layout name="AppShell">
-  <slot name="header" position="top" sticky="true" />
-  <slot name="sidebar" width="250px" />
-  <slot name="content" grow="true" />
-</layout>
-```
-
-**Page fills slots with target:**
 ```xml
 <page name="Dashboard" layout="@layout.AppShell">
   <slot target="@layout.AppShell.header">
-    <use component="@component.Header" />
+    <element type="@component.Header" />
   </slot>
-
   <slot target="@layout.AppShell.sidebar">
-    <use component="@component.Sidebar" />
+    <container type="nav" prompt="vertical">...</container>
   </slot>
-
   <slot target="@layout.AppShell.content">
-    <!-- Main page content here -->
-    <heading level="1">Dashboard</heading>
+    <container type="grid" prompt="3 columns, medium gap">...</container>
   </slot>
 </page>
 ```
-
-### Slot Roles
-
-The `role` attribute controls how slots behave in visual editors.
-
-```xml
-<layout name="AppShell">
-  <slot name="header" role="chrome" />
-  <slot name="sidebar" role="chrome" />
-  <slot name="content" role="content" />
-  <slot name="footer" role="chrome" />
-</layout>
-```
-
-When editing a page, only the `content` slot is expanded. The `chrome` slots remain collapsed.
 
 ---
 
 ## Pages
 
-Define application pages with routes, data, and content.
+Define application pages with routes and data.
 
 ```xml
 <pages>
-  <page
-    name="Dashboard"
-    route="/dashboard"
-    layout="@layout.AppShell"
-    auth="required"
-  >
+  <page name="Dashboard" route="/dashboard" layout="@layout.AppShell">
+    <guards>
+      <guard type="@guard.auth" />
+    </guards>
     <data>
-      <query name="tasks" type="@entity.Task[]" />
+      <query name="projects" type="@entity.Project[]" />
     </data>
 
     <slot target="@layout.AppShell.content">
-      <!-- Page content -->
+      <element type="skeleton" if="@state.loading" />
+      <element type="text" prompt="style danger" if="@state.error">Failed to load</element>
+      <container type="grid" prompt="3 columns, medium gap" if="@state.projects">
+        <element type="@component.ProjectCard" for-each="@state.projects" />
+      </container>
     </slot>
-
-    <states>
-      <state name="loading">...</state>
-      <state name="error">...</state>
-    </states>
   </page>
 </pages>
 ```
@@ -137,264 +506,82 @@ Define application pages with routes, data, and content.
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-| `name` | string | Page identifier (required) |
-| `route` | string | URL path (required) |
+| `name` | string | Page identifier |
+| `route` | string | URL path |
 | `layout` | @layout | Layout to use |
-| `auth` | required/guest/none | Authentication requirement |
-| `entity` | @entity | Primary entity for the page |
-| `title` | string | Page title |
+
+Use `prompt` for: route params (`param id`), title.
 
 ### Route Parameters
 
 ```xml
-<page name="UserProfile" route="/users/:id">
+<page name="UserProfile" route="/users" prompt="param id">
   <data>
-    <query name="user" type="@entity.User" filter="id == @param.id" />
+    <query name="user" type="@entity.User" prompt="filter by id param" />
   </data>
+</page>
+```
+
+Multiple params: `prompt="params id, tab"`
+
+---
+
+## Actions
+
+```xml
+<actions>
+  <action name="save" prompt="submit form, show success toast" />
+  <action name="delete" prompt="confirm dialog, then delete item, refresh list" />
+  <action name="export" prompt="download as CSV file" />
+</actions>
+```
+
+Reference actions in elements:
+
+```xml
+<element type="button" prompt="on click @action.save">Save</element>
+<element type="button" prompt="on click @action.delete, style danger">Delete</element>
+```
+
+---
+
+## Guards
+
+```xml
+<guards>
+  <guard name="auth" prompt="if not authenticated, redirect to /login" />
+  <guard name="admin" prompt="if not admin role, redirect to /unauthorized" />
+</guards>
+```
+
+Pages reference guards:
+
+```xml
+<page name="Dashboard" route="/dashboard">
+  <guards>
+    <guard type="@guard.auth" />
+  </guards>
+  ...
 </page>
 ```
 
 ---
 
-## Modals
-
-Overlay dialogs for forms and confirmations.
+## Toast Notifications
 
 ```xml
-<modals>
-  <modal name="CreateProject" title="New Project" size="medium">
-    <form onSubmit="@action.createProject" onSuccess="closeModal()">
-      <input label="Project Name" bind="name" required="true" />
-      <button type="submit">Create</button>
-    </form>
-  </modal>
+<!-- Toast container (place once in layout) -->
+<element type="toaster" name="notifications" prompt="position bottom-right" />
 
-  <modal name="ConfirmDelete" title="Delete Item?" size="small">
-    <text>Are you sure you want to delete this item?</text>
-    <container layout="row" gap="md" justify="end">
-      <button variant="outline" onClick="closeModal()">Cancel</button>
-      <button variant="danger" onClick="@action.delete">Delete</button>
-    </container>
-  </modal>
-</modals>
-```
-
-### Modal Attributes
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `name` | string | Modal identifier (required) |
-| `title` | string | Modal title |
-| `size` | small/medium/large/full | Modal size |
-| `closable` | boolean | Show close button |
-| `closeOnOverlay` | boolean | Close when clicking overlay |
-
-### Opening Modals
-
-```xml
-<button onClick="openModal(@modal.CreateProject)">New Project</button>
-```
-
-### Closing Modals
-
-```xml
-<button onClick="closeModal()">Cancel</button>
+<!-- Trigger toast -->
+<element type="button" prompt="on click toast notifications 'Saved', style success">
+  Save
+</element>
 ```
 
 ---
 
-## Navigation
-
-Webapp navigation with sidebar and routing.
-
-```xml
-<navigation>
-  <flow name="authFlow">
-    <step page="@page.Login" />
-    <step page="@page.Register" />
-    <redirect onSuccess="/dashboard" />
-  </flow>
-
-  <guards>
-    <guard name="auth" redirect="/login" />
-    <guard name="guest" redirect="/dashboard" />
-    <guard name="admin" role="admin" redirect="/unauthorized" />
-  </guards>
-</navigation>
-```
-
-### NavItem Element
-
-```xml
-<navItem
-  to="@page.Dashboard"
-  icon="home"
-  label="Dashboard"
-  active="@state.currentPage == 'Dashboard'"
-/>
-```
-
-### Navigation Functions
-
-| Function | Description |
-|----------|-------------|
-| `navigateTo(@page.X)` | Navigate to page |
-| `navigateBack()` | Go back in history |
-| `openModal(@modal.X)` | Open modal dialog |
-| `closeModal()` | Close current modal |
-
----
-
-## Webapp-Specific Elements
-
-### Dropdown Menu
-
-```xml
-<dropdown trigger="click">
-  <button icon="more-vertical" variant="ghost" />
-  <menu>
-    <menuItem icon="edit" label="Edit" onClick="@action.edit" />
-    <menuItem icon="copy" label="Duplicate" onClick="@action.duplicate" />
-    <separator />
-    <menuItem icon="trash" label="Delete" color="danger" onClick="@action.delete" />
-  </menu>
-</dropdown>
-```
-
-### Table
-
-```xml
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Status</th>
-      <th>Date</th>
-      <th width="50px"></th>
-    </tr>
-  </thead>
-  <tbody>
-    <for each="item" in="@state.items">
-      <tr>
-        <td>@item.name</td>
-        <td><badge value="@item.status" /></td>
-        <td>@item.createdAt</td>
-        <td>
-          <dropdown>
-            <menuItem onClick="@action.edit">Edit</menuItem>
-            <menuItem onClick="@action.delete">Delete</menuItem>
-          </dropdown>
-        </td>
-      </tr>
-    </for>
-  </tbody>
-</table>
-```
-
-### Pagination
-
-```xml
-<pagination
-  data="@state.items"
-  pageSize="25"
-  currentPage="@state.page"
-  onChange="@action.setPage"
-/>
-```
-
-### Tabs
-
-```xml
-<tabs defaultTab="overview">
-  <tab name="overview" label="Overview">
-    <container>Overview content</container>
-  </tab>
-  <tab name="settings" label="Settings">
-    <container>Settings content</container>
-  </tab>
-</tabs>
-```
-
-### Breadcrumb
-
-```xml
-<breadcrumb>
-  <breadcrumbItem to="@page.Dashboard">Dashboard</breadcrumbItem>
-  <breadcrumbItem to="@page.Projects">Projects</breadcrumbItem>
-  <breadcrumbItem>Current Project</breadcrumbItem>
-</breadcrumb>
-```
-
-### Tooltip
-
-```xml
-<tooltip content="This is a tooltip">
-  <button icon="info" variant="ghost" />
-</tooltip>
-```
-
-### Sidebar
-
-```xml
-<slot name="sidebar" width="250px" collapsible="true">
-  <nav orientation="vertical">
-    <navItem to="@page.Dashboard" icon="home">Dashboard</navItem>
-    <navItem to="@page.Projects" icon="folder">Projects</navItem>
-    <navItem to="@page.Settings" icon="settings">Settings</navItem>
-  </nav>
-</slot>
-```
-
----
-
-## Element Reference (Webapp)
-
-### Layout Elements
-
-| Element | Description | Key Attributes |
-|---------|-------------|----------------|
-| `layout` | Page layout template | `name` |
-| `slot` | Content placeholder | `name`, `target`, `width`, `height`, `sticky` |
-| `page` | Routed page | `name`, `route`, `layout`, `auth` |
-
-### Overlay Elements
-
-| Element | Description | Key Attributes |
-|---------|-------------|----------------|
-| `modal` | Dialog modal | `name`, `title`, `size`, `closable` |
-| `drawer` | Slide-out drawer | `name`, `title`, `position`, `size` |
-| `dropdown` | Dropdown menu | `trigger`, `align` |
-| `tooltip` | Hover tooltip | `content`, `position` |
-| `popover` | Click popover | `trigger`, `content` |
-
-### Data Display
-
-| Element | Description | Key Attributes |
-|---------|-------------|----------------|
-| `table` | Data table | `columns`, `sortable`, `selectable` |
-| `thead` | Table header | - |
-| `tbody` | Table body | - |
-| `tr` | Table row | - |
-| `th` | Table header cell | - |
-| `td` | Table data cell | - |
-| `pagination` | Page navigation | `pageSize`, `total`, `current` |
-
-### Navigation
-
-| Element | Description | Key Attributes |
-|---------|-------------|----------------|
-| `nav` | Navigation container | `orientation` |
-| `navItem` | Navigation link | `to`, `icon`, `label`, `active` |
-| `breadcrumb` | Breadcrumb trail | - |
-| `breadcrumbItem` | Breadcrumb link | `to` |
-| `tabs` | Tab container | `defaultTab`, `variant` |
-| `tab` | Tab panel | `name`, `label`, `icon` |
-
----
-
-## Example
-
-Complete webapp spec structure:
+## Complete Example
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -403,39 +590,40 @@ Complete webapp spec structure:
 
   <layouts>
     <layout name="AppShell">
-      <container layout="row" minHeight="100vh">
-        <slot name="sidebar" width="240px" role="chrome" />
-        <container layout="column" grow="true">
-          <slot name="header" height="64px" role="chrome" />
-          <slot name="content" grow="true" scroll="true" role="content" />
+      <container type="row" prompt="min height 100vh">
+        <slot name="sidebar" prompt="width 240px" />
+        <container type="column" prompt="grow">
+          <slot name="header" prompt="height 64px" />
+          <slot name="content" prompt="grow, scroll" />
         </container>
       </container>
     </layout>
   </layouts>
 
   <pages>
-    <page name="Dashboard" route="/dashboard" layout="AppShell" auth="required">
+    <page name="Dashboard" route="/dashboard" layout="@layout.AppShell">
+      <guards>
+        <guard type="@guard.auth" />
+      </guards>
       <data>
         <query name="projects" type="@entity.Project[]" />
       </data>
 
       <slot target="@layout.AppShell.content">
-        <container layout="grid" columns="3" gap="md">
-          <for each="project" in="@state.projects">
-            <use component="ProjectCard" project="@item" />
-          </for>
+        <container type="grid" prompt="3 columns, medium gap">
+          <element type="@component.ProjectCard" for-each="@state.projects" />
         </container>
       </slot>
     </page>
   </pages>
 
   <modals>
-    <modal name="CreateProject" title="New Project" size="medium">
-      <form onSubmit="@action.createProject" onSuccess="closeModal()">
-        <input label="Project Name" bind="name" required="true" />
-        <button type="submit">Create</button>
-      </form>
-    </modal>
+    <container type="modal" name="CreateProject" prompt="title 'New Project', medium size">
+      <container type="form" prompt="on submit @action.createProject, on success close modal">
+        <element type="input" prompt="required">Project Name</element>
+        <element type="button" prompt="style primary">Create</element>
+      </container>
+    </container>
   </modals>
 </webapp>
 ```
