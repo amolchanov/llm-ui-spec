@@ -21,7 +21,13 @@ export default defineConfig({
         { text: 'Mobile', link: '/spec/mobile' },
         { text: 'Desktop', link: '/spec/desktop' }
       ]},
-      { text: 'Reference', link: '/reference/platform-mapping' },
+      { text: 'Tools', items: [
+        { text: 'Compiler', link: '/#spec-compiler' },
+        { text: 'Editor', link: '/#visual-editor' }
+      ]},
+      { text: 'Reference', items: [
+        { text: 'Platform Mapping', link: '/platform-mapping' }
+      ]},
       { text: 'GitHub', link: 'https://github.com/amolchanov/llm-ui-spec' }
     ],
 
@@ -50,13 +56,18 @@ export default defineConfig({
             { text: 'Mobile', link: '/spec/mobile' },
             { text: 'Desktop', link: '/spec/desktop' }
           ]
-        }
-      ],
-      '/reference/': [
+        },
+        {
+          text: 'Tools',
+          items: [
+            { text: 'Compiler', link: '/#spec-compiler' },
+            { text: 'Editor', link: '/#visual-editor' }
+          ]
+        },
         {
           text: 'Reference',
           items: [
-            { text: 'Platform Mapping', link: '/reference/platform-mapping' }
+            { text: 'Platform Mapping', link: '/platform-mapping' }
           ]
         }
       ]

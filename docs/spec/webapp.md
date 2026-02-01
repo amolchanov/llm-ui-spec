@@ -1,5 +1,9 @@
 # LLM UI Spec - Webapp Platform
 
+::: info Preview
+This specification is under active development and may change.
+:::
+
 Platform-specific elements and patterns for web applications.
 
 See [Core Specification](./) for shared concepts (entities, components, prompts, etc.).

@@ -46,7 +46,7 @@ The spec is your **single source of truth**. LLMs reference it to generate consi
 
 Start with high-level requirements, progressively add detail:
 
-![Iterative Development Levels](/images/iterative-development.svg)
+![Iterative Development Levels](./images/iterative-development.svg)
 
 At each level, validate with stakeholders before adding more detail. Generate code at any level - LLMs fill in the gaps based on your prompts and constraints.
 
@@ -75,6 +75,8 @@ At each level, validate with stakeholders before adding more detail. Generate co
 
 ## Tools
 
+> **Note:** The editor and compiler currently support webapp specs only. Mobile and desktop support is planned for future releases.
+
 ### Visual Editor
 React-based editor for creating and editing specs with drag-and-drop. Open a spec file and visually build your UI structure.
 
@@ -87,11 +89,7 @@ Converts XML specs to LLM-friendly markdown for code generation. Outputs structu
 
 ```bash
 cd compiler && npm install
-
-# Compile any platform spec
-node dist/cli.js ../samples/formcraft.spec.xml -o webapp.md
-node dist/cli.js ../samples/formcraft.mobile.spec.xml -o mobile.md
-node dist/cli.js ../samples/formcraft.desktop.spec.xml -o desktop.md
+node dist/cli.js ../samples/formcraft.spec.xml -o prompt.md
 ```
 
 ## Platforms
@@ -99,5 +97,5 @@ node dist/cli.js ../samples/formcraft.desktop.spec.xml -o desktop.md
 | Platform | Description |
 |----------|-------------|
 | [Webapp](/spec/webapp) | Layouts, pages, modals, sidebar navigation, tables with pagination |
-| [Mobile](/spec/mobile) | Screens, tab navigation, bottom sheets, swipe actions, pull-to-refresh |
-| [Desktop](/spec/desktop) | Windows, menu bar, toolbar, context menus, split views, keyboard shortcuts |
+| [Mobile](/spec/mobile) | Screens, tab navigation, bottom sheets, swipe actions, pull-to-refresh *(coming soon)* |
+| [Desktop](/spec/desktop) | Windows, menu bar, toolbar, context menus, split views, keyboard shortcuts *(coming soon)* |

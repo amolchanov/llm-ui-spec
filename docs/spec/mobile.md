@@ -1,5 +1,9 @@
 # LLM UI Spec - Mobile Platform
 
+::: warning Coming Soon
+Mobile platform support is scheduled for a future release. The specification below is a preview and may change.
+:::
+
 Platform-specific elements and patterns for mobile applications.
 
 See [Core Specification](./) for shared concepts (entities, components, prompts, etc.).

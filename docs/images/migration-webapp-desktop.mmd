@@ -1,28 +1,30 @@
-flowchart LR
+flowchart TB
     subgraph S1["1️⃣ Structure"]
-        A1["page → screen"]
-        A2["Add navigationBar"]
-        A3["Add safeArea"]
+        A1["page → view"]
+        A2["Add menuBar"]
+        A3["Add toolbar"]
+        A4["Add statusBar"]
     end
 
     subgraph S2["2️⃣ Navigation"]
-        B1["sidebar → tabs"]
-        B2["navigateTo → push"]
+        B1["sidebar → treeView"]
+        B2["Add shortcuts"]
     end
 
     subgraph S3["3️⃣ Overlays"]
-        C1["modal → sheet"]
-        C2["confirm → alert"]
+        C1["modal → dialog"]
+        C2["full modal → window"]
     end
 
     subgraph S4["4️⃣ Lists"]
-        D1["table → list"]
-        D2["Add refreshable"]
-        D3["Add swipeActions"]
+        D1["Add selectable"]
+        D2["Add contextMenu"]
+        D3["Add drag/drop"]
     end
 
-    subgraph S5["5️⃣ Actions"]
-        E1["button → FAB"]
+    subgraph S5["5️⃣ Layout"]
+        E1["Add splitView"]
+        E2["Add panels"]
     end
 
     S1 --> S2 --> S3 --> S4 --> S5

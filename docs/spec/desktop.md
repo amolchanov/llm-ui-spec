@@ -1,5 +1,9 @@
 # LLM UI Spec - Desktop Platform
 
+::: warning Coming Soon
+Desktop platform support is scheduled for a future release. The specification below is a preview and may change.
+:::
+
 Platform-specific elements and patterns for desktop applications.
 
 See [Core Specification](./) for shared concepts (entities, components, prompts, etc.).
