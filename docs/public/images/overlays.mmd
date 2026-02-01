@@ -1,0 +1,43 @@
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["**Form Dialog**<br/>modal"]
+            W2["**Confirmation**<br/>modal size=small"]
+            W3["**Menu**<br/>dropdown"]
+            W4["**Full Screen**<br/>modal size=full"]
+            W5["**Close**<br/>closeModal( )"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["**Form Dialog**<br/>sheet"]
+            M2["**Confirmation**<br/>alert"]
+            M3["**Menu**<br/>sheet with list"]
+            M4["**Full Screen**<br/>push(@screen)"]
+            M5["**Close**<br/>dismissSheet( )"]
+        end
+        subgraph Desktop["🖥️ Desktop"]
+            direction TB
+            D1["**Form Dialog**<br/>dialog"]
+            D2["**Confirmation**<br/>dialog (small)"]
+            D3["**Menu**<br/>contextMenu"]
+            D4["**Full Screen**<br/>window"]
+            D5["**Close**<br/>closeDialog( )"]
+        end
+    end
+
+    W1 -.-> M1
+    M1 -.-> D1
+    W2 -.-> M2
+    M2 -.-> D2
+    W3 -.-> M3
+    M3 -.-> D3
+    W4 -.-> M4
+    M4 -.-> D4
+    W5 -.-> M5
+    M5 -.-> D5
+
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
+    style Desktop fill:#e8f5e9,stroke:#388e3c

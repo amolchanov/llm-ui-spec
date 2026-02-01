@@ -1,0 +1,43 @@
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["**Vertical**<br/>container layout=column"]
+            W2["**Horizontal**<br/>container layout=row"]
+            W3["**Grid**<br/>container layout=grid"]
+            W4["**Card**<br/>container variant=card"]
+            W5["**Section**<br/>section"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["**Vertical**<br/>column"]
+            M2["**Horizontal**<br/>row"]
+            M3["**Grid**<br/>grid or list"]
+            M4["**Card**<br/>container variant=card"]
+            M5["**Section**<br/>listSection"]
+        end
+        subgraph Desktop["🖥️ Desktop"]
+            direction TB
+            D1["**Vertical**<br/>column"]
+            D2["**Horizontal**<br/>row"]
+            D3["**Grid**<br/>container layout=grid"]
+            D4["**Card**<br/>container variant=card"]
+            D5["**Section**<br/>section or panel"]
+        end
+    end
+
+    W1 -.-> M1
+    M1 -.-> D1
+    W2 -.-> M2
+    M2 -.-> D2
+    W3 -.-> M3
+    M3 -.-> D3
+    W4 -.-> M4
+    M4 -.-> D4
+    W5 -.-> M5
+    M5 -.-> D5
+
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
+    style Desktop fill:#e8f5e9,stroke:#388e3c

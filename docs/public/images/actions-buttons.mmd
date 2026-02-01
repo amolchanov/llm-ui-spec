@@ -1,0 +1,38 @@
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["**Primary Action**<br/>button in header"]
+            W2["**Secondary**<br/>button group"]
+            W3["**Destructive**<br/>button variant=danger"]
+            W4["**Context Menu**<br/>dropdown / right-click"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["**Primary Action**<br/>floatingButton or header"]
+            M2["**Secondary**<br/>navigationBar rightButtons"]
+            M3["**Destructive**<br/>alert destructive=true"]
+            M4["**Context Menu**<br/>swipe or long-press"]
+        end
+        subgraph Desktop["🖥️ Desktop"]
+            direction TB
+            D1["**Primary Action**<br/>toolbar or menuBar"]
+            D2["**Secondary**<br/>toolbar buttons"]
+            D3["**Destructive**<br/>dialog confirm"]
+            D4["**Context Menu**<br/>contextMenu (right-click)"]
+        end
+    end
+
+    W1 -.-> M1
+    M1 -.-> D1
+    W2 -.-> M2
+    M2 -.-> D2
+    W3 -.-> M3
+    M3 -.-> D3
+    W4 -.-> M4
+    M4 -.-> D4
+
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
+    style Desktop fill:#e8f5e9,stroke:#388e3c

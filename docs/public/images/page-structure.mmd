@@ -1,0 +1,43 @@
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["**Container**<br/>page"]
+            W2["**Header**<br/>slot in layout"]
+            W3["**Title**<br/>text variant=heading1"]
+            W4["**Scroll**<br/>scroll=true on slot"]
+            W5["**Safe Area**<br/>N/A"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["**Container**<br/>screen"]
+            M2["**Header**<br/>navigationBar"]
+            M3["**Title**<br/>text variant=largeTitle"]
+            M4["**Scroll**<br/>scroll or list"]
+            M5["**Safe Area**<br/>safeArea=true"]
+        end
+        subgraph Desktop["🖥️ Desktop"]
+            direction TB
+            D1["**Container**<br/>view + panel"]
+            D2["**Header**<br/>toolbar + titleBar"]
+            D3["**Title**<br/>text variant=heading1"]
+            D4["**Scroll**<br/>scroll in panel"]
+            D5["**Safe Area**<br/>N/A"]
+        end
+    end
+
+    W1 -.-> M1
+    M1 -.-> D1
+    W2 -.-> M2
+    M2 -.-> D2
+    W3 -.-> M3
+    M3 -.-> D3
+    W4 -.-> M4
+    M4 -.-> D4
+    W5 -.-> M5
+    M5 -.-> D5
+
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
+    style Desktop fill:#e8f5e9,stroke:#388e3c

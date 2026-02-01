@@ -1,0 +1,38 @@
+flowchart LR
+    subgraph WebOnly["🌐 Webapp Only"]
+        direction TB
+        WA["breadcrumb"]
+        WB["tabs (horizontal)"]
+        WC["tooltip"]
+    end
+
+    subgraph MobileOnly["📱 Mobile Only"]
+        direction TB
+        MA["navigationBar"]
+        MB["tabBar"]
+        MC["sheet"]
+        MD["alert"]
+        ME["floatingButton"]
+        MF["swipeAction"]
+        MG["listItem / listSection"]
+        MH["safeArea"]
+        MI["refreshable"]
+    end
+
+    subgraph DesktopOnly["🖥️ Desktop Only"]
+        direction TB
+        DA["menuBar"]
+        DB["toolbar / toolbarButton"]
+        DC["statusBar"]
+        DD["window (multi)"]
+        DE["contextMenu"]
+        DF["treeView / treeItem"]
+        DG["splitView / panel"]
+        DH["draggable / dropZone"]
+        DI["tray"]
+        DJ["keyboard shortcuts"]
+    end
+
+    style WebOnly fill:#e3f2fd,stroke:#1976d2
+    style MobileOnly fill:#f3e5f5,stroke:#7b1fa2
+    style DesktopOnly fill:#e8f5e9,stroke:#388e3c

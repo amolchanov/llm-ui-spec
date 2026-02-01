@@ -46,20 +46,7 @@ The spec is your **single source of truth**. LLMs reference it to generate consi
 
 Start with high-level requirements, progressively add detail:
 
-```mermaid
-flowchart LR
-    L1["L1: Requirements\n(prompts only)"]
-    L2["L2: Structure\n(layouts + slots)"]
-    L3["L3: Detailed\n(containers + loops)"]
-    L4["L4: Full\n(complete spec)"]
-
-    L1 --> L2 --> L3 --> L4
-
-    style L1 fill:#e3f2fd
-    style L2 fill:#e8f5e9
-    style L3 fill:#fff3e0
-    style L4 fill:#f3e5f5
-```
+![Iterative Development Levels](/images/iterative-development.svg)
 
 At each level, validate with stakeholders before adding more detail. Generate code at any level - LLMs fill in the gaps based on your prompts and constraints.
 
@@ -109,40 +96,8 @@ node dist/cli.js ../samples/formcraft.desktop.spec.xml -o desktop.md
 
 ## Platforms
 
-<div class="platforms">
-
-### Webapp
-Layouts, pages, modals, sidebar navigation, tables with pagination.
-
-[Learn more →](/spec/webapp)
-
-### Mobile
-Screens, tab navigation, bottom sheets, swipe actions, pull-to-refresh.
-
-[Learn more →](/spec/mobile)
-
-### Desktop
-Windows, menu bar, toolbar, context menus, split views, keyboard shortcuts.
-
-[Learn more →](/spec/desktop)
-
-</div>
-
-<style>
-.platforms {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-  margin-top: 2rem;
-}
-
-@media (max-width: 768px) {
-  .platforms {
-    grid-template-columns: 1fr;
-  }
-}
-
-.platforms h3 {
-  margin-top: 0;
-}
-</style>
+| Platform | Description |
+|----------|-------------|
+| [Webapp](/spec/webapp) | Layouts, pages, modals, sidebar navigation, tables with pagination |
+| [Mobile](/spec/mobile) | Screens, tab navigation, bottom sheets, swipe actions, pull-to-refresh |
+| [Desktop](/spec/desktop) | Windows, menu bar, toolbar, context menus, split views, keyboard shortcuts |

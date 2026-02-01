@@ -1,0 +1,43 @@
+flowchart TB
+    subgraph section[" "]
+        direction LR
+        subgraph Webapp["🌐 Webapp"]
+            direction TB
+            W1["navigateTo(@page.X)"]
+            W2["navigateBack( )"]
+            W3["openModal(@modal.X)"]
+            W4["closeModal( )"]
+            W5["N/A"]
+        end
+        subgraph Mobile["📱 Mobile"]
+            direction TB
+            M1["push(@screen.X)"]
+            M2["back button / swipe"]
+            M3["presentSheet(@sheet.X)"]
+            M4["dismissSheet( )"]
+            M5["switchTab('name')"]
+        end
+        subgraph Desktop["🖥️ Desktop"]
+            direction TB
+            D1["setView('X') / treeItem"]
+            D2["keyboard shortcut"]
+            D3["openDialog(@dialog.X)"]
+            D4["closeDialog( )"]
+            D5["openWindow(@window.X)"]
+        end
+    end
+
+    W1 -.-> M1
+    M1 -.-> D1
+    W2 -.-> M2
+    M2 -.-> D2
+    W3 -.-> M3
+    M3 -.-> D3
+    W4 -.-> M4
+    M4 -.-> D4
+    W5 -.-> M5
+    M5 -.-> D5
+
+    style Webapp fill:#e3f2fd,stroke:#1976d2
+    style Mobile fill:#f3e5f5,stroke:#7b1fa2
+    style Desktop fill:#e8f5e9,stroke:#388e3c
