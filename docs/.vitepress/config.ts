@@ -4,8 +4,8 @@ export default defineConfig({
   title: 'LLM UI Spec',
   description: 'Declarative XML specification for defining UI structure',
 
-  // Set base for GitHub Pages subdirectory
-  base: '/llm-ui-spec/',
+  // Custom domain - use root base
+  base: '/',
 
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }]

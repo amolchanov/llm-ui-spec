@@ -10,200 +10,193 @@
   - Context menus (right-click)
   - Resizable panels and split views
   - Status bar
-  - Dialog boxes and modals
+  - Dialog boxes
   - Drag and drop
-  - System tray integration
 -->
-<webapp name="FormCraft" version="1.0">
+<desktopapp name="FormCraft" version="1.0">
 
   <import src="./formcraft.shared.spec.xml" />
 
 
   <!-- ==================== APP CONFIGURATION ==================== -->
   <config>
-    <window
-      title="FormCraft"
-      width="1200"
-      height="800"
-      minWidth="800"
-      minHeight="600"
-      titleBarStyle="hidden"
-    />
-    <tray icon="form-icon" tooltip="FormCraft" />
+    <window prompt="title FormCraft, width 1200, height 800, min width 800, min height 600, title bar hidden" />
+    <tray prompt="icon form-icon, tooltip FormCraft" />
   </config>
 
 
+  <!-- ==================== GUARDS ==================== -->
+  <guards>
+    <guard name="auth" prompt="if not authenticated, redirect to login" />
+  </guards>
+
+
+  <!-- ==================== ACTIONS ==================== -->
+  <actions>
+    <action name="save" prompt="save current form, show success notification" />
+    <action name="undo" prompt="undo last action" />
+    <action name="redo" prompt="redo last undone action" />
+    <action name="delete" prompt="confirm dialog, delete item, refresh" />
+    <action name="duplicate" prompt="duplicate item, select new item" />
+    <action name="publish" prompt="publish form, show success notification" />
+    <action name="export" prompt="show export dialog, download file" />
+    <action name="quit" prompt="save unsaved changes dialog, quit application" />
+  </actions>
+
+
   <!-- ==================== MENU BAR ==================== -->
-  <menuBar>
-    <menu label="File">
-      <menuItem label="New Form" shortcut="Ctrl+N" onClick="openDialog(@dialog.CreateForm)" />
-      <menuItem label="Open..." shortcut="Ctrl+O" onClick="@action.openFilePicker" />
-      <separator />
-      <menuItem label="Import" submenu="true">
-        <menuItem label="From JSON" onClick="@action.importJSON" />
-        <menuItem label="From CSV" onClick="@action.importCSV" />
-        <menuItem label="From Google Forms" onClick="@action.importGoogleForms" />
-      </menuItem>
-      <menuItem label="Export" submenu="true">
-        <menuItem label="As JSON" onClick="@action.exportJSON" />
-        <menuItem label="As PDF" onClick="@action.exportPDF" />
-      </menuItem>
-      <separator />
-      <menuItem label="Settings" shortcut="Ctrl+," onClick="openWindow(@window.Settings)" />
-      <separator />
-      <menuItem label="Exit" shortcut="Alt+F4" onClick="@action.quit" />
-    </menu>
+  <container type="menu-bar">
+    <container type="menu" prompt="label File">
+      <element prompt="shortcut Ctrl+N, on click open @dialog.CreateForm">New Form</element>
+      <element prompt="shortcut Ctrl+O, on click @action.openFilePicker">Open...</element>
+      <element type="separator" />
+      <container type="menu" prompt="label Import">
+        <element prompt="on click @action.importJSON">From JSON</element>
+        <element prompt="on click @action.importCSV">From CSV</element>
+        <element prompt="on click @action.importGoogleForms">From Google Forms</element>
+      </container>
+      <container type="menu" prompt="label Export">
+        <element prompt="on click @action.exportJSON">As JSON</element>
+        <element prompt="on click @action.exportPDF">As PDF</element>
+      </container>
+      <element type="separator" />
+      <element prompt="shortcut Ctrl+Comma, on click open @window.Settings">Settings</element>
+      <element type="separator" />
+      <element prompt="shortcut Alt+F4, on click @action.quit">Exit</element>
+    </container>
 
-    <menu label="Edit">
-      <menuItem label="Undo" shortcut="Ctrl+Z" onClick="@action.undo" enabled="@state.canUndo" />
-      <menuItem label="Redo" shortcut="Ctrl+Shift+Z" onClick="@action.redo" enabled="@state.canRedo" />
-      <separator />
-      <menuItem label="Cut" shortcut="Ctrl+X" onClick="@action.cut" />
-      <menuItem label="Copy" shortcut="Ctrl+C" onClick="@action.copy" />
-      <menuItem label="Paste" shortcut="Ctrl+V" onClick="@action.paste" />
-      <menuItem label="Delete" shortcut="Delete" onClick="@action.delete" />
-      <separator />
-      <menuItem label="Select All" shortcut="Ctrl+A" onClick="@action.selectAll" />
-      <menuItem label="Duplicate" shortcut="Ctrl+D" onClick="@action.duplicate" />
-    </menu>
+    <container type="menu" prompt="label Edit">
+      <element prompt="shortcut Ctrl+Z, on click @action.undo, enabled @state.canUndo">Undo</element>
+      <element prompt="shortcut Ctrl+Shift+Z, on click @action.redo, enabled @state.canRedo">Redo</element>
+      <element type="separator" />
+      <element prompt="shortcut Ctrl+X, on click @action.cut">Cut</element>
+      <element prompt="shortcut Ctrl+C, on click @action.copy">Copy</element>
+      <element prompt="shortcut Ctrl+V, on click @action.paste">Paste</element>
+      <element prompt="shortcut Delete, on click @action.delete">Delete</element>
+      <element type="separator" />
+      <element prompt="shortcut Ctrl+A, on click @action.selectAll">Select All</element>
+      <element prompt="shortcut Ctrl+D, on click @action.duplicate">Duplicate</element>
+    </container>
 
-    <menu label="View">
-      <menuItem label="Toggle Sidebar" shortcut="Ctrl+B" onClick="@action.toggleSidebar" checked="@state.sidebarVisible" />
-      <menuItem label="Toggle Properties" shortcut="Ctrl+P" onClick="@action.toggleProperties" checked="@state.propertiesVisible" />
-      <separator />
-      <menuItem label="Zoom In" shortcut="Ctrl+=" onClick="@action.zoomIn" />
-      <menuItem label="Zoom Out" shortcut="Ctrl+-" onClick="@action.zoomOut" />
-      <menuItem label="Reset Zoom" shortcut="Ctrl+0" onClick="@action.zoomReset" />
-      <separator />
-      <menuItem label="Full Screen" shortcut="F11" onClick="@action.toggleFullScreen" />
-    </menu>
+    <container type="menu" prompt="label View">
+      <element prompt="shortcut Ctrl+B, on click @action.toggleSidebar, checked @state.sidebarVisible">Toggle Sidebar</element>
+      <element prompt="shortcut Ctrl+P, on click @action.toggleProperties, checked @state.propertiesVisible">Toggle Properties</element>
+      <element type="separator" />
+      <element prompt="shortcut Ctrl+Plus, on click @action.zoomIn">Zoom In</element>
+      <element prompt="shortcut Ctrl+Minus, on click @action.zoomOut">Zoom Out</element>
+      <element prompt="shortcut Ctrl+0, on click @action.zoomReset">Reset Zoom</element>
+      <element type="separator" />
+      <element prompt="shortcut F11, on click @action.toggleFullScreen">Full Screen</element>
+    </container>
 
-    <menu label="Form">
-      <menuItem label="Add Field" shortcut="Ctrl+Shift+F" onClick="openDialog(@dialog.AddField)" />
-      <menuItem label="Preview" shortcut="Ctrl+Shift+P" onClick="openWindow(@window.Preview)" />
-      <separator />
-      <menuItem label="Publish" shortcut="Ctrl+Shift+Enter" onClick="@action.publish" enabled="@state.canPublish" />
-      <menuItem label="Unpublish" onClick="@action.unpublish" enabled="@state.form.status == 'published'" />
-      <separator />
-      <menuItem label="Form Settings..." onClick="openDialog(@dialog.FormSettings)" />
-    </menu>
+    <container type="menu" prompt="label Form">
+      <element prompt="shortcut Ctrl+Shift+F, on click open @dialog.AddField">Add Field</element>
+      <element prompt="shortcut Ctrl+Shift+P, on click open @window.Preview">Preview</element>
+      <element type="separator" />
+      <element prompt="shortcut Ctrl+Shift+Enter, on click @action.publish, enabled @state.canPublish">Publish</element>
+      <element prompt="on click @action.unpublish, enabled @state.form.status == 'published'">Unpublish</element>
+      <element type="separator" />
+      <element prompt="on click open @dialog.FormSettings">Form Settings...</element>
+    </container>
 
-    <menu label="Help">
-      <menuItem label="Documentation" shortcut="F1" onClick="@action.openDocs" />
-      <menuItem label="Keyboard Shortcuts" shortcut="Ctrl+/" onClick="openDialog(@dialog.Shortcuts)" />
-      <separator />
-      <menuItem label="Check for Updates..." onClick="@action.checkUpdates" />
-      <menuItem label="About FormCraft" onClick="openDialog(@dialog.About)" />
-    </menu>
-  </menuBar>
+    <container type="menu" prompt="label Help">
+      <element prompt="shortcut F1, on click @action.openDocs">Documentation</element>
+      <element prompt="shortcut Ctrl+Slash, on click open @dialog.Shortcuts">Keyboard Shortcuts</element>
+      <element type="separator" />
+      <element prompt="on click @action.checkUpdates">Check for Updates...</element>
+      <element prompt="on click open @dialog.About">About FormCraft</element>
+    </container>
+  </container>
 
 
   <!-- ==================== MAIN LAYOUT ==================== -->
   <layout name="MainLayout">
-    <column height="100%">
-      <!-- Custom Title Bar (for frameless window) -->
-      <titleBar draggable="true">
-        <row padding="sm" gap="md" align="center">
-          <icon name="form" size="sm" />
-          <text variant="body" weight="medium">FormCraft</text>
-          <spacer />
-          <windowControls />
-        </row>
-      </titleBar>
+    <container type="column" prompt="height 100%">
+      <!-- Custom Title Bar -->
+      <container type="title-bar" prompt="draggable">
+        <container type="row" prompt="padding small, gap medium, align center">
+          <element type="icon" prompt="form, size small" />
+          <element type="text" prompt="body, weight medium">FormCraft</element>
+          <element type="spacer" />
+          <element type="window-controls" />
+        </container>
+      </container>
 
       <!-- Toolbar -->
-      <toolbar>
-        <toolbarGroup>
-          <toolbarButton icon="plus" tooltip="New Form (Ctrl+N)" onClick="openDialog(@dialog.CreateForm)" />
-          <toolbarButton icon="folder-open" tooltip="Open (Ctrl+O)" onClick="@action.openFilePicker" />
-          <toolbarButton icon="save" tooltip="Save (Ctrl+S)" onClick="@action.save" disabled="!@state.isDirty" />
-        </toolbarGroup>
-        <toolbarSeparator />
-        <toolbarGroup>
-          <toolbarButton icon="undo" tooltip="Undo (Ctrl+Z)" onClick="@action.undo" disabled="!@state.canUndo" />
-          <toolbarButton icon="redo" tooltip="Redo (Ctrl+Shift+Z)" onClick="@action.redo" disabled="!@state.canRedo" />
-        </toolbarGroup>
-        <toolbarSeparator />
-        <toolbarGroup>
-          <toolbarButton icon="eye" tooltip="Preview (Ctrl+Shift+P)" onClick="openWindow(@window.Preview)" />
-          <toolbarButton icon="share-2" tooltip="Share" onClick="openDialog(@dialog.Share)" disabled="@state.form.status != 'published'" />
-        </toolbarGroup>
-        <spacer />
-        <search placeholder="Search forms..." width="250px" onSearch="@action.search" />
-      </toolbar>
+      <container type="toolbar">
+        <container type="toolbar-group">
+          <element prompt="plus icon, tooltip New Form (Ctrl+N), on click open @dialog.CreateForm" />
+          <element prompt="folder-open icon, tooltip Open (Ctrl+O), on click @action.openFilePicker" />
+          <element prompt="save icon, tooltip Save (Ctrl+S), on click @action.save, disabled if-not @state.isDirty" />
+        </container>
+        <element type="separator" />
+        <container type="toolbar-group">
+          <element prompt="undo icon, tooltip Undo (Ctrl+Z), on click @action.undo, disabled if-not @state.canUndo" />
+          <element prompt="redo icon, tooltip Redo (Ctrl+Shift+Z), on click @action.redo, disabled if-not @state.canRedo" />
+        </container>
+        <element type="separator" />
+        <container type="toolbar-group">
+          <element prompt="eye icon, tooltip Preview (Ctrl+Shift+P), on click open @window.Preview" />
+          <element prompt="share icon, tooltip Share, on click open @dialog.Share, disabled @state.form.status != 'published'" />
+        </container>
+        <element type="spacer" />
+        <element type="search" prompt="placeholder Search forms..., width 250px, on search @action.search" />
+      </container>
 
       <!-- Main Content Area -->
-      <splitView direction="horizontal" grow="true">
+      <container type="split-view" prompt="horizontal, grow">
         <!-- Sidebar -->
-        <panel name="sidebar" width="260px" minWidth="200px" maxWidth="400px" resizable="true" collapsible="true">
-          <column height="100%" background="@theme.colors.gray.50">
+        <container type="panel" prompt="width 260px, min width 200px, max width 400px, resizable, collapsible">
+          <container type="column" prompt="height 100%, background gray-50">
             <!-- Navigation -->
-            <treeView>
-              <treeItem icon="home" label="Dashboard" selected="@state.view == 'dashboard'" onClick="@action.setView('dashboard')" />
-              <treeItem icon="file-text" label="Forms" expanded="true">
-                <for each="form" in="@state.forms">
-                  <treeItem
-                    icon="file"
-                    label="@item.name"
-                    selected="@state.selectedForm == @item.id"
-                    onClick="@action.selectForm(@item.id)"
-                    contextMenu="@contextMenu.FormItem"
-                  />
-                </for>
-              </treeItem>
-              <treeItem icon="inbox" label="Submissions" badge="@state.unreadCount" onClick="@action.setView('submissions')" />
-              <treeItem icon="bar-chart-2" label="Analytics" onClick="@action.setView('analytics')" />
-            </treeView>
+            <container type="tree-view">
+              <element prompt="home icon, selected @state.view == 'dashboard', on click @action.setView with dashboard">Dashboard</element>
+              <container prompt="file-text icon, expanded">
+                <container for-each="@state.forms">
+                  <element prompt="file icon, selected @state.selectedForm == @item.id, on click @action.selectForm with @item.id, context menu @context-menu.FormItem" use="@item.name" />
+                </container>
+              </container>
+              <element prompt="inbox icon, badge @state.unreadCount, on click @action.setView with submissions">Submissions</element>
+              <element prompt="bar-chart icon, on click @action.setView with analytics">Analytics</element>
+            </container>
 
-            <spacer />
+            <element type="spacer" />
 
             <!-- User Section -->
-            <container padding="md" borderTop="true">
-              <row gap="sm" align="center">
-                <use component="Avatar" src="@state.user.avatar" name="@state.user.name" size="sm" />
-                <column grow="true">
-                  <text variant="body" weight="medium" truncate="true" value="@state.user.name" />
-                  <text variant="caption" muted="true" value="@state.user.plan" />
-                </column>
-                <button icon="settings" variant="ghost" size="sm" onClick="openWindow(@window.Settings)" />
-              </row>
+            <container prompt="padding medium, border top">
+              <container type="row" prompt="gap small, align center">
+                <element type="@component.Avatar" prompt="src @state.user.avatar, name @state.user.name, size small" />
+                <container type="column" prompt="grow">
+                  <element type="text" prompt="body, weight medium, truncate" use="@state.user.name" />
+                  <element type="text" prompt="caption, muted" use="@state.user.plan" />
+                </container>
+                <element type="button" prompt="settings icon, style ghost, size small, on click open @window.Settings" />
+              </container>
             </container>
-          </column>
-        </panel>
+          </container>
+        </container>
 
         <!-- Main Content -->
-        <panel grow="true">
+        <container type="panel" prompt="grow">
           <slot name="content" />
-        </panel>
+        </container>
 
         <!-- Properties Panel -->
-        <panel name="properties" width="300px" minWidth="250px" maxWidth="450px" resizable="true" collapsible="true" visible="@state.propertiesVisible">
+        <container type="panel" prompt="width 300px, min width 250px, max width 450px, resizable, collapsible, visible @state.propertiesVisible">
           <slot name="properties" />
-        </panel>
-      </splitView>
+        </container>
+      </container>
 
       <!-- Status Bar -->
-      <statusBar>
-        <statusBarItem>
-          <text variant="caption" value="@state.form.fields.length" /> fields
-        </statusBarItem>
-        <statusBarItem>
-          <text variant="caption" value="@state.form.submissions.length" /> submissions
-        </statusBarItem>
-        <spacer />
-        <statusBarItem>
-          <badge value="@state.form.status" size="xs" />
-        </statusBarItem>
-        <statusBarItem>
-          <if condition="@state.isDirty">
-            <text variant="caption" muted="true">Unsaved changes</text>
-          </if>
-          <else>
-            <text variant="caption" muted="true">Saved</text>
-          </else>
-        </statusBarItem>
-      </statusBar>
-    </column>
+      <container type="status-bar">
+        <element type="text" prompt="caption">{@state.form.fields.length} fields</element>
+        <element type="text" prompt="caption">{@state.form.submissions.length} submissions</element>
+        <element type="spacer" />
+        <element type="badge" use="@state.form.status" prompt="size extra-small" />
+        <element type="text" prompt="caption, muted" if="@state.isDirty">Unsaved changes</element>
+        <element type="text" prompt="caption, muted" if-not="@state.isDirty">Saved</element>
+      </container>
+    </container>
   </layout>
 
 
@@ -213,368 +206,212 @@
     <!-- Dashboard View -->
     <view name="Dashboard">
       <data>
-        <query name="forms" type="@entity.Form[]" filter="owner == @auth.user" orderBy="updatedAt desc" limit="10" />
-        <query name="stats" source="api/analytics/overview" />
+        <query name="forms" type="@entity.Form[]" prompt="filter owner == @auth.user, order by updatedAt desc, limit 10" />
+        <query name="stats" prompt="source api/analytics/overview" />
       </data>
 
-      <scroll padding="lg">
-        <column gap="lg" maxWidth="1200px">
-          <text variant="heading1">Dashboard</text>
+      <container type="scroll" prompt="padding large">
+        <container type="column" prompt="gap large, max width 1200px">
+          <element type="text" prompt="heading1">Dashboard</element>
 
           <!-- Stats Row -->
-          <container layout="grid" columns="4" gap="md">
-            <use component="StatCard" label="Total Forms" value="@state.stats.totalForms" icon="file-text" />
-            <use component="StatCard" label="Submissions" value="@state.stats.totalSubmissions" icon="inbox" trend="@state.stats.submissionsTrend" trendLabel="vs last week" />
-            <use component="StatCard" label="Completion Rate" value="@state.stats.completionRate" icon="check-circle" />
-            <use component="StatCard" label="Active Forms" value="@state.stats.activeForms" icon="activity" />
+          <container type="grid" prompt="4 columns, gap medium">
+            <element type="@component.StatCard" prompt="label Total Forms, value @state.stats.totalForms, icon file-text" />
+            <element type="@component.StatCard" prompt="label Submissions, value @state.stats.totalSubmissions, icon inbox, trend @state.stats.submissionsTrend, trendLabel vs last week" />
+            <element type="@component.StatCard" prompt="label Completion Rate, value @state.stats.completionRate, icon check-circle" />
+            <element type="@component.StatCard" prompt="label Active Forms, value @state.stats.activeForms, icon activity" />
           </container>
 
           <!-- Recent Forms -->
-          <section>
-            <row justify="between" align="center" marginBottom="md">
-              <text variant="heading2">Recent Forms</text>
-              <button variant="text" onClick="@action.setView('forms')">View All</button>
-            </row>
-
-            <container layout="grid" columns="3" gap="md">
-              <for each="form" in="@state.forms | limit(6)">
-                <use
-                  component="FormCard"
-                  form="@item"
-                  onClick="@action.selectForm(@item.id)"
-                  onDoubleClick="openWindow(@window.FormEditor, { id: @item.id })"
-                  contextMenu="@contextMenu.FormItem"
-                />
-              </for>
+          <container type="column">
+            <container type="row" prompt="justify between, align center, margin bottom medium">
+              <element type="text" prompt="heading2">Recent Forms</element>
+              <element type="button" prompt="style text, on click @action.setView with forms">View All</element>
             </container>
-          </section>
+
+            <container type="grid" prompt="3 columns, gap medium" for-each="@state.forms | limit(6)">
+              <element type="@component.FormCard" prompt="
+                on click @action.selectForm with @item.id,
+                on double-click open @window.FormEditor with id @item.id,
+                context menu @context-menu.FormItem
+              " />
+            </container>
+          </container>
 
           <!-- Recent Activity -->
-          <section>
-            <text variant="heading2" marginBottom="md">Recent Submissions</text>
-            <container variant="card">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Form</th>
-                    <th>Response</th>
-                    <th>Date</th>
-                    <th width="50px"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <for each="submission" in="@state.recentSubmissions">
-                    <tr interactive="true" onDoubleClick="openDialog(@dialog.SubmissionDetail, { id: @item.id })">
-                      <td>
-                        <row gap="sm" align="center">
-                          <if condition="!@item.isRead">
-                            <container width="8px" height="8px" borderRadius="full" background="@theme.colors.primary" />
-                          </if>
-                          <text value="@item.form.name" />
-                        </row>
-                      </td>
-                      <td><text value="{summarize(@item.data, 50)}" muted="true" /></td>
-                      <td><text value="@item.createdAt" format="relative" muted="true" /></td>
-                      <td>
-                        <button icon="more-horizontal" variant="ghost" size="sm" onClick="showContextMenu(@contextMenu.Submission, @item)" />
-                      </td>
-                    </tr>
-                  </for>
-                </tbody>
-              </table>
+          <container type="column">
+            <element type="text" prompt="heading2, margin bottom medium">Recent Submissions</element>
+            <container type="card">
+              <container type="table">
+                <container prompt="header">
+                  <element>Form</element>
+                  <element>Response</element>
+                  <element>Date</element>
+                  <element prompt="width 50px"></element>
+                </container>
+                <container prompt="body" for-each="@state.recentSubmissions">
+                  <container prompt="interactive, on double-click open @dialog.SubmissionDetail with id @item.id">
+                    <container type="row" prompt="gap small, align center">
+                      <container prompt="width 8px, height 8px, border radius full, background primary" if-not="@item.isRead" />
+                      <element type="text" use="@item.form.name" />
+                    </container>
+                    <element type="text" prompt="muted">{summarize(@item.data, 50)}</element>
+                    <element type="text" prompt="muted, format relative" use="@item.createdAt" />
+                    <element type="button" prompt="more-horizontal icon, style ghost, size small, on click show @context-menu.Submission with @item" />
+                  </container>
+                </container>
+              </container>
             </container>
-          </section>
-        </column>
-      </scroll>
+          </container>
+        </container>
+      </container>
     </view>
 
 
     <!-- Form Editor View -->
-    <view name="FormEditor">
-      <params>
-        <param name="id" type="uuid" required="true" />
-      </params>
+    <view name="FormEditor" prompt="param id">
       <data>
-        <query name="form" type="@entity.Form" filter="id == @param.id" include="fields,settings" />
+        <query name="form" type="@entity.Form" prompt="filter id == @param.id, include fields, settings" />
       </data>
 
       <slot name="content">
-        <splitView direction="horizontal">
+        <container type="split-view" prompt="horizontal">
           <!-- Field Palette -->
-          <panel width="220px" borderRight="true">
-            <column padding="md" gap="sm">
-              <text variant="subtitle" marginBottom="sm">Add Field</text>
+          <container type="panel" prompt="width 220px, border right">
+            <container type="column" prompt="padding medium, gap small">
+              <element type="text" prompt="subtitle, margin bottom small">Add Field</element>
 
-              <text variant="caption" muted="true" marginTop="sm">Basic</text>
-              <draggable type="field" data="{ type: 'text' }">
-                <container variant="outline" padding="sm" interactive="true">
-                  <row gap="sm" align="center">
-                    <icon name="type" size="sm" />
-                    <text variant="body">Text</text>
-                  </row>
+              <element type="text" prompt="caption, muted, margin top small">Basic</element>
+              <container type="draggable" prompt="type field, data type text">
+                <container prompt="outline, padding small, interactive">
+                  <container type="row" prompt="gap small, align center">
+                    <element type="icon" prompt="type, size small" />
+                    <element type="text" prompt="body">Text</element>
+                  </container>
                 </container>
-              </draggable>
-              <draggable type="field" data="{ type: 'email' }">
-                <container variant="outline" padding="sm" interactive="true">
-                  <row gap="sm" align="center">
-                    <icon name="mail" size="sm" />
-                    <text variant="body">Email</text>
-                  </row>
+              </container>
+              <container type="draggable" prompt="type field, data type email">
+                <container prompt="outline, padding small, interactive">
+                  <container type="row" prompt="gap small, align center">
+                    <element type="icon" prompt="mail, size small" />
+                    <element type="text" prompt="body">Email</element>
+                  </container>
                 </container>
-              </draggable>
-              <draggable type="field" data="{ type: 'number' }">
-                <container variant="outline" padding="sm" interactive="true">
-                  <row gap="sm" align="center">
-                    <icon name="hash" size="sm" />
-                    <text variant="body">Number</text>
-                  </row>
+              </container>
+              <container type="draggable" prompt="type field, data type number">
+                <container prompt="outline, padding small, interactive">
+                  <container type="row" prompt="gap small, align center">
+                    <element type="icon" prompt="hash, size small" />
+                    <element type="text" prompt="body">Number</element>
+                  </container>
                 </container>
-              </draggable>
-              <draggable type="field" data="{ type: 'textarea' }">
-                <container variant="outline" padding="sm" interactive="true">
-                  <row gap="sm" align="center">
-                    <icon name="align-left" size="sm" />
-                    <text variant="body">Long Text</text>
-                  </row>
-                </container>
-              </draggable>
+              </container>
 
-              <text variant="caption" muted="true" marginTop="sm">Choice</text>
-              <draggable type="field" data="{ type: 'select' }">
-                <container variant="outline" padding="sm" interactive="true">
-                  <row gap="sm" align="center">
-                    <icon name="chevron-down" size="sm" />
-                    <text variant="body">Dropdown</text>
-                  </row>
+              <element type="text" prompt="caption, muted, margin top small">Choice</element>
+              <container type="draggable" prompt="type field, data type select">
+                <container prompt="outline, padding small, interactive">
+                  <container type="row" prompt="gap small, align center">
+                    <element type="icon" prompt="chevron-down, size small" />
+                    <element type="text" prompt="body">Dropdown</element>
+                  </container>
                 </container>
-              </draggable>
-              <draggable type="field" data="{ type: 'radio' }">
-                <container variant="outline" padding="sm" interactive="true">
-                  <row gap="sm" align="center">
-                    <icon name="circle" size="sm" />
-                    <text variant="body">Radio</text>
-                  </row>
+              </container>
+              <container type="draggable" prompt="type field, data type checkbox">
+                <container prompt="outline, padding small, interactive">
+                  <container type="row" prompt="gap small, align center">
+                    <element type="icon" prompt="check-square, size small" />
+                    <element type="text" prompt="body">Checkbox</element>
+                  </container>
                 </container>
-              </draggable>
-              <draggable type="field" data="{ type: 'checkbox' }">
-                <container variant="outline" padding="sm" interactive="true">
-                  <row gap="sm" align="center">
-                    <icon name="check-square" size="sm" />
-                    <text variant="body">Checkbox</text>
-                  </row>
-                </container>
-              </draggable>
+              </container>
 
-              <text variant="caption" muted="true" marginTop="sm">Advanced</text>
-              <draggable type="field" data="{ type: 'date' }">
-                <container variant="outline" padding="sm" interactive="true">
-                  <row gap="sm" align="center">
-                    <icon name="calendar" size="sm" />
-                    <text variant="body">Date</text>
-                  </row>
+              <element type="text" prompt="caption, muted, margin top small">Advanced</element>
+              <container type="draggable" prompt="type field, data type date">
+                <container prompt="outline, padding small, interactive">
+                  <container type="row" prompt="gap small, align center">
+                    <element type="icon" prompt="calendar, size small" />
+                    <element type="text" prompt="body">Date</element>
+                  </container>
                 </container>
-              </draggable>
-              <draggable type="field" data="{ type: 'file' }">
-                <container variant="outline" padding="sm" interactive="true">
-                  <row gap="sm" align="center">
-                    <icon name="upload" size="sm" />
-                    <text variant="body">File Upload</text>
-                  </row>
+              </container>
+              <container type="draggable" prompt="type field, data type file">
+                <container prompt="outline, padding small, interactive">
+                  <container type="row" prompt="gap small, align center">
+                    <element type="icon" prompt="upload, size small" />
+                    <element type="text" prompt="body">File Upload</element>
+                  </container>
                 </container>
-              </draggable>
-              <draggable type="field" data="{ type: 'rating' }">
-                <container variant="outline" padding="sm" interactive="true">
-                  <row gap="sm" align="center">
-                    <icon name="star" size="sm" />
-                    <text variant="body">Rating</text>
-                  </row>
-                </container>
-              </draggable>
-            </column>
-          </panel>
+              </container>
+            </container>
+          </container>
 
           <!-- Form Canvas -->
-          <panel grow="true">
-            <scroll padding="lg">
-              <column maxWidth="600px" margin="auto" gap="md">
+          <container type="panel" prompt="grow">
+            <container type="scroll" prompt="padding large">
+              <container type="column" prompt="max width 600px, margin auto, gap medium">
                 <!-- Form Header -->
-                <input
-                  value="@state.form.name"
-                  variant="ghost"
-                  size="xl"
-                  placeholder="Form Title"
-                  onChange="@action.updateFormName"
-                />
-                <input
-                  value="@state.form.description"
-                  variant="ghost"
-                  placeholder="Add a description..."
-                  onChange="@action.updateFormDescription"
-                />
+                <element type="input" prompt="variant ghost, size extra-large, placeholder Form Title, on change @action.updateFormName" use="@state.form.name" />
+                <element type="input" prompt="variant ghost, placeholder Add a description..., on change @action.updateFormDescription" use="@state.form.description" />
 
                 <!-- Fields -->
-                <dropZone accept="field" onDrop="@action.addFieldAt">
-                  <for each="field" in="@state.form.fields">
-                    <draggable type="field" data="@item" reorderable="true">
-                      <container
-                        variant="card"
-                        padding="md"
-                        selected="@state.selectedField == @item.id"
-                        onClick="@action.selectField(@item.id)"
-                        onDoubleClick="focusPropertiesPanel()"
-                        contextMenu="@contextMenu.Field"
-                      >
-                        <column gap="sm">
-                          <row gap="xs" align="center">
-                            <text value="@item.label" variant="body" weight="medium" />
-                            <if condition="@item.required">
-                              <text value="*" color="@theme.colors.danger" />
-                            </if>
-                          </row>
-                          <prompt>Render appropriate field preview based on @item.type</prompt>
-                        </column>
+                <container type="drop-zone" prompt="accept field, on drop @action.addFieldAt" for-each="@state.form.fields">
+                  <container type="draggable" prompt="type field, reorderable">
+                    <container type="card" prompt="
+                      padding medium,
+                      selected @state.selectedField == @item.id,
+                      on click @action.selectField with @item.id,
+                      on double-click focus properties panel,
+                      context menu @context-menu.Field
+                    ">
+                      <container type="column" prompt="gap small">
+                        <container type="row" prompt="gap extra-small, align center">
+                          <element type="text" prompt="body, weight medium" use="@item.label" />
+                          <element type="text" prompt="color danger" if="@item.required">*</element>
+                        </container>
+                        <prompt>Render appropriate field preview based on @item.type</prompt>
                       </container>
-                    </draggable>
-                  </for>
-                </dropZone>
+                    </container>
+                  </container>
+                </container>
 
                 <!-- Empty State -->
-                <if condition="@state.form.fields.length == 0">
-                  <container padding="xl" borderStyle="dashed" borderRadius="md" align="center">
-                    <column align="center" gap="md">
-                      <icon name="plus-circle" size="xl" color="@theme.colors.muted" />
-                      <text variant="body" muted="true">Drag fields here or click to add</text>
-                      <button variant="outline" onClick="openDialog(@dialog.AddField)">Add Field</button>
-                    </column>
+                <container prompt="padding extra-large, border dashed, border radius medium, align center" if-not="@state.form.fields.length">
+                  <container type="column" prompt="align center, gap medium">
+                    <element type="icon" prompt="plus-circle, size extra-large, muted" />
+                    <element type="text" prompt="body, muted">Drag fields here or click to add</element>
+                    <element type="button" prompt="style outline, on click open @dialog.AddField">Add Field</element>
                   </container>
-                </if>
-              </column>
-            </scroll>
-          </panel>
-        </splitView>
+                </container>
+              </container>
+            </container>
+          </container>
+        </container>
       </slot>
 
       <!-- Properties Panel -->
       <slot name="properties">
-        <if condition="@state.selectedField">
-          <column padding="md" gap="md">
-            <row justify="between" align="center">
-              <text variant="subtitle">Field Properties</text>
-              <button icon="x" variant="ghost" size="sm" onClick="@action.selectField(null)" />
-            </row>
+        <container type="column" prompt="padding medium, gap medium" if="@state.selectedField">
+          <container type="row" prompt="justify between, align center">
+            <element type="text" prompt="subtitle">Field Properties</element>
+            <element type="button" prompt="x icon, style ghost, size small, on click @action.selectField with null" />
+          </container>
 
-            <form bind="@state.selectedFieldData" onChange="@action.updateField">
-              <column gap="md">
-                <input label="Label" bind="label" required="true" />
-                <input label="Placeholder" bind="placeholder" />
-                <textarea label="Help Text" bind="helpText" rows="2" />
-                <switch label="Required" bind="required" />
+          <container type="form" prompt="on change @action.updateField">
+            <container type="column" prompt="gap medium">
+              <element type="input" prompt="required">Label</element>
+              <element type="input">Placeholder</element>
+              <element type="textarea" prompt="rows 2">Help Text</element>
+              <element type="switch">Required</element>
 
-                <if condition="@state.selectedFieldData.type in ['select', 'radio', 'checkbox']">
-                  <column gap="sm">
-                    <text variant="caption">Options</text>
-                    <for each="option" in="@state.selectedFieldData.options">
-                      <row gap="sm">
-                        <input value="@item" grow="true" onChange="@action.updateOption(@index, @value)" />
-                        <button icon="x" variant="ghost" size="sm" onClick="@action.removeOption(@index)" />
-                      </row>
-                    </for>
-                    <button variant="outline" size="sm" icon="plus" onClick="@action.addOption">Add Option</button>
-                  </column>
-                </if>
-
-                <divider />
-                <button variant="outline" color="danger" icon="trash" onClick="@action.deleteField">Delete Field</button>
-              </column>
-            </form>
-          </column>
-        </if>
-        <else>
-          <column padding="md" align="center" justify="center" height="100%">
-            <text variant="body" muted="true">Select a field to edit properties</text>
-          </column>
-        </else>
-      </slot>
-    </view>
-
-
-    <!-- Submissions View -->
-    <view name="Submissions">
-      <data>
-        <query name="submissions" type="@entity.Submission[]" filter="form.owner == @auth.user" orderBy="createdAt desc" />
-      </data>
-      <localState>
-        <state name="filter" type="string" default="all" />
-        <state name="selectedForm" type="uuid" />
-      </localState>
-
-      <column padding="lg" gap="md">
-        <row justify="between" align="center">
-          <text variant="heading1">Submissions</text>
-          <row gap="md">
-            <select value="@state.selectedForm" onChange="@action.setFormFilter" placeholder="All Forms">
-              <option value="">All Forms</option>
-              <for each="form" in="@state.forms">
-                <option value="@item.id" label="@item.name" />
-              </for>
-            </select>
-            <button icon="download" variant="outline" onClick="@action.exportSubmissions">Export</button>
-          </row>
-        </row>
-
-        <tabs value="@state.filter" onChange="@action.setFilter">
-          <tab value="all" label="All" count="@state.submissions.length" />
-          <tab value="unread" label="Unread" count="@state.unreadCount" />
-          <tab value="spam" label="Spam" count="@state.spamCount" />
-        </tabs>
-
-        <container variant="card">
-          <table selectable="true" onSelectionChange="@action.setSelectedSubmissions">
-            <thead>
-              <tr>
-                <th width="40px"><checkbox bind="@state.allSelected" onChange="@action.toggleSelectAll" /></th>
-                <th>Form</th>
-                <th>Response Summary</th>
-                <th>Date</th>
-                <th width="100px">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <for each="submission" in="@state.submissions | filter(@state.filter)">
-                <tr
-                  selected="@state.selectedSubmissions.includes(@item.id)"
-                  onDoubleClick="openDialog(@dialog.SubmissionDetail, { id: @item.id })"
-                  contextMenu="@contextMenu.Submission"
-                >
-                  <td><checkbox value="@item.id" /></td>
-                  <td>
-                    <row gap="sm" align="center">
-                      <if condition="!@item.isRead">
-                        <container width="8px" height="8px" borderRadius="full" background="@theme.colors.primary" />
-                      </if>
-                      <text value="@item.form.name" weight="@item.isRead ? 'normal' : 'medium'" />
-                    </row>
-                  </td>
-                  <td><text value="{summarize(@item.data, 80)}" muted="true" /></td>
-                  <td><text value="@item.createdAt" format="datetime" /></td>
-                  <td>
-                    <row gap="xs">
-                      <button icon="eye" variant="ghost" size="sm" tooltip="View" onClick="openDialog(@dialog.SubmissionDetail, { id: @item.id })" />
-                      <button icon="trash" variant="ghost" size="sm" tooltip="Delete" onClick="@action.deleteSubmission(@item.id)" />
-                    </row>
-                  </td>
-                </tr>
-              </for>
-            </tbody>
-          </table>
-
-          <if condition="@state.submissions.length == 0">
-            <use component="EmptyState" icon="inbox" title="No submissions yet" description="Submissions will appear here when users fill out your forms" />
-          </if>
+              <element type="separator" />
+              <element type="button" prompt="style outline, style danger, trash icon, on click @action.deleteField">Delete Field</element>
+            </container>
+          </container>
         </container>
-
-        <pagination total="@state.totalSubmissions" pageSize="50" currentPage="@state.page" onChange="@action.setPage" />
-      </column>
+        <container type="column" prompt="padding medium, align center, justify center, height 100%" if-not="@state.selectedField">
+          <element type="text" prompt="body, muted">Select a field to edit properties</element>
+        </container>
+      </slot>
     </view>
 
   </views>
@@ -584,83 +421,72 @@
   <windows>
 
     <!-- Settings Window -->
-    <window name="Settings" title="Settings" width="700" height="500" resizable="false">
-      <row height="100%">
+    <window name="Settings" prompt="title Settings, width 700, height 500, resizable false">
+      <container type="row" prompt="height 100%">
         <!-- Settings Navigation -->
-        <column width="200px" background="@theme.colors.gray.50" padding="md" gap="xs">
-          <text variant="caption" muted="true" marginBottom="sm">SETTINGS</text>
-          <button variant="@state.settingsTab == 'general' ? 'subtle' : 'ghost'" align="left" onClick="@action.setSettingsTab('general')">General</button>
-          <button variant="@state.settingsTab == 'account' ? 'subtle' : 'ghost'" align="left" onClick="@action.setSettingsTab('account')">Account</button>
-          <button variant="@state.settingsTab == 'appearance' ? 'subtle' : 'ghost'" align="left" onClick="@action.setSettingsTab('appearance')">Appearance</button>
-          <button variant="@state.settingsTab == 'notifications' ? 'subtle' : 'ghost'" align="left" onClick="@action.setSettingsTab('notifications')">Notifications</button>
-          <button variant="@state.settingsTab == 'api' ? 'subtle' : 'ghost'" align="left" onClick="@action.setSettingsTab('api')">API Keys</button>
-          <button variant="@state.settingsTab == 'billing' ? 'subtle' : 'ghost'" align="left" onClick="@action.setSettingsTab('billing')">Billing</button>
-        </column>
+        <container type="column" prompt="width 200px, background gray-50, padding medium, gap extra-small">
+          <element type="text" prompt="caption, muted, margin bottom small">SETTINGS</element>
+          <element type="button" prompt="style @state.settingsTab == 'general' ? 'subtle' : 'ghost', align left, on click @action.setSettingsTab with general">General</element>
+          <element type="button" prompt="style @state.settingsTab == 'account' ? 'subtle' : 'ghost', align left, on click @action.setSettingsTab with account">Account</element>
+          <element type="button" prompt="style @state.settingsTab == 'appearance' ? 'subtle' : 'ghost', align left, on click @action.setSettingsTab with appearance">Appearance</element>
+          <element type="button" prompt="style @state.settingsTab == 'api' ? 'subtle' : 'ghost', align left, on click @action.setSettingsTab with api">API Keys</element>
+          <element type="button" prompt="style @state.settingsTab == 'billing' ? 'subtle' : 'ghost', align left, on click @action.setSettingsTab with billing">Billing</element>
+        </container>
 
         <!-- Settings Content -->
-        <column grow="true" padding="lg">
-          <switch value="@state.settingsTab">
-            <case value="general">
-              <prompt>General settings: default form settings, language, timezone</prompt>
-            </case>
-            <case value="account">
-              <prompt>Account settings: profile, email, password, delete account</prompt>
-            </case>
-            <case value="appearance">
-              <column gap="md">
-                <text variant="heading2">Appearance</text>
-                <row gap="lg">
-                  <column gap="xs">
-                    <text variant="body">Theme</text>
-                    <segmentedControl value="@state.theme" onChange="@action.setTheme">
-                      <segment value="light" label="Light" />
-                      <segment value="dark" label="Dark" />
-                      <segment value="system" label="System" />
-                    </segmentedControl>
-                  </column>
-                </row>
-                <switch label="Compact mode" bind="@state.compactMode" />
-                <switch label="Show toolbar" bind="@state.showToolbar" />
-              </column>
-            </case>
-            <case value="api">
-              <prompt>API keys management with create, copy, delete</prompt>
-            </case>
-            <case value="billing">
-              <prompt>Billing: current plan, upgrade, payment method, invoices</prompt>
-            </case>
-          </switch>
-        </column>
-      </row>
+        <container type="column" prompt="grow, padding large">
+          <container if="@state.settingsTab == 'appearance'">
+            <container type="column" prompt="gap medium">
+              <element type="text" prompt="heading2">Appearance</element>
+              <container type="row" prompt="gap large">
+                <container type="column" prompt="gap extra-small">
+                  <element type="text" prompt="body">Theme</element>
+                  <container type="row" prompt="segmented control">
+                    <element prompt="value light">Light</element>
+                    <element prompt="value dark">Dark</element>
+                    <element prompt="value system">System</element>
+                  </container>
+                </container>
+              </container>
+              <element type="switch">Compact mode</element>
+              <element type="switch">Show toolbar</element>
+            </container>
+          </container>
+          <prompt if="@state.settingsTab == 'general'">General settings: default form settings, language, timezone</prompt>
+          <prompt if="@state.settingsTab == 'account'">Account settings: profile, email, password, delete account</prompt>
+          <prompt if="@state.settingsTab == 'api'">API keys management with create, copy, delete</prompt>
+          <prompt if="@state.settingsTab == 'billing'">Billing: current plan, upgrade, payment method, invoices</prompt>
+        </container>
+      </container>
     </window>
 
 
     <!-- Preview Window -->
-    <window name="Preview" title="Form Preview - @state.form.name" width="500" height="700">
-      <column height="100%">
-        <toolbar>
-          <toolbarGroup>
-            <toolbarButton icon="smartphone" tooltip="Mobile View" onClick="@action.setPreviewSize('mobile')" active="@state.previewSize == 'mobile'" />
-            <toolbarButton icon="tablet" tooltip="Tablet View" onClick="@action.setPreviewSize('tablet')" active="@state.previewSize == 'tablet'" />
-            <toolbarButton icon="monitor" tooltip="Desktop View" onClick="@action.setPreviewSize('desktop')" active="@state.previewSize == 'desktop'" />
-          </toolbarGroup>
-          <spacer />
-          <toolbarButton icon="external-link" tooltip="Open in Browser" onClick="@action.openInBrowser" />
-        </toolbar>
+    <window name="Preview" prompt="title Form Preview - @state.form.name, width 500, height 700">
+      <container type="column" prompt="height 100%">
+        <container type="toolbar">
+          <container type="toolbar-group">
+            <element prompt="smartphone icon, tooltip Mobile View, on click @action.setPreviewSize with mobile, active @state.previewSize == 'mobile'" />
+            <element prompt="tablet icon, tooltip Tablet View, on click @action.setPreviewSize with tablet, active @state.previewSize == 'tablet'" />
+            <element prompt="monitor icon, tooltip Desktop View, on click @action.setPreviewSize with desktop, active @state.previewSize == 'desktop'" />
+          </container>
+          <element type="spacer" />
+          <element prompt="external-link icon, tooltip Open in Browser, on click @action.openInBrowser" />
+        </container>
 
-        <container grow="true" background="@theme.colors.gray.100" padding="md" align="center">
-          <container
-            width="@state.previewSize == 'mobile' ? '375px' : (@state.previewSize == 'tablet' ? '768px' : '100%')"
-            height="100%"
-            background="white"
-            borderRadius="md"
-            shadow="lg"
-            overflow="auto"
-          >
+        <container prompt="grow, background gray-100, padding medium, align center">
+          <container prompt="
+            width @state.previewSize == 'mobile' ? '375px' : (@state.previewSize == 'tablet' ? '768px' : '100%'),
+            height 100%,
+            background white,
+            border radius medium,
+            shadow large,
+            overflow auto
+          ">
             <prompt>Render the form preview with all fields and styling</prompt>
           </container>
         </container>
-      </column>
+      </container>
     </window>
 
   </windows>
@@ -670,168 +496,119 @@
   <dialogs>
 
     <!-- Create Form Dialog -->
-    <dialog name="CreateForm" title="Create New Form" width="450">
-      <form onSubmit="@action.createForm" onSuccess="closeDialog()">
-        <column gap="md" padding="lg">
-          <input label="Form Name" bind="name" required="true" placeholder="e.g., Contact Form" autoFocus="true" />
-          <textarea label="Description" bind="description" rows="2" placeholder="Optional description..." />
+    <dialog name="CreateForm" prompt="title Create New Form, width 450">
+      <container type="form" prompt="on submit @action.createForm, on success close dialog">
+        <container type="column" prompt="gap medium, padding large">
+          <element type="input" prompt="required, placeholder e.g. Contact Form, auto focus">Form Name</element>
+          <element type="textarea" prompt="rows 2, placeholder Optional description...">Description</element>
 
-          <text variant="caption" muted="true" marginTop="md">Or start from a template:</text>
-          <container layout="grid" columns="3" gap="sm">
-            <for each="template" in="@state.templates">
-              <container
-                variant="outline"
-                padding="md"
-                interactive="true"
-                selected="@state.selectedTemplate == @item.id"
-                onClick="@action.selectTemplate(@item.id)"
-              >
-                <column align="center" gap="xs">
-                  <icon name="@item.icon" size="lg" color="@theme.colors.primary" />
-                  <text variant="caption" align="center" value="@item.name" />
-                </column>
+          <element type="text" prompt="caption, muted, margin top medium">Or start from a template:</element>
+          <container type="grid" prompt="3 columns, gap small" for-each="@state.templates">
+            <container prompt="
+              outline,
+              padding medium,
+              interactive,
+              selected @state.selectedTemplate == @item.id,
+              on click @action.selectTemplate with @item.id
+            ">
+              <container type="column" prompt="align center, gap extra-small">
+                <element type="icon" use="@item.icon" prompt="size large, color primary" />
+                <element type="text" prompt="caption, align center" use="@item.name" />
               </container>
-            </for>
+            </container>
           </container>
 
-          <row justify="end" gap="sm" marginTop="md">
-            <button variant="outline" onClick="closeDialog()">Cancel</button>
-            <button type="submit" variant="primary">Create</button>
-          </row>
-        </column>
-      </form>
+          <container type="row" prompt="justify end, gap small, margin top medium">
+            <element type="button" prompt="style outline, on click close dialog">Cancel</element>
+            <element type="button" prompt="style primary, type submit">Create</element>
+          </container>
+        </container>
+      </container>
     </dialog>
 
 
     <!-- Share Dialog -->
-    <dialog name="Share" title="Share Form" width="500">
-      <column gap="md" padding="lg">
-        <container variant="card" padding="md">
-          <column gap="sm">
-            <text variant="caption" muted="true">Form Link</text>
-            <row gap="sm">
-              <input value="@state.form.publicUrl" readOnly="true" grow="true" />
-              <button icon="copy" onClick="@action.copyLink" tooltip="Copy to clipboard" />
-              <button icon="external-link" onClick="@action.openInBrowser" tooltip="Open in browser" />
-            </row>
-          </column>
+    <dialog name="Share" prompt="title Share Form, width 500">
+      <container type="column" prompt="gap medium, padding large">
+        <container type="card" prompt="padding medium">
+          <container type="column" prompt="gap small">
+            <element type="text" prompt="caption, muted">Form Link</element>
+            <container type="row" prompt="gap small">
+              <element type="input" prompt="read only, grow" use="@state.form.publicUrl" />
+              <element type="button" prompt="copy icon, tooltip Copy to clipboard, on click @action.copyLink" />
+              <element type="button" prompt="external-link icon, tooltip Open in browser, on click @action.openInBrowser" />
+            </container>
+          </container>
         </container>
 
-        <container variant="card" padding="md">
-          <column gap="sm">
-            <text variant="caption" muted="true">Embed Code</text>
-            <textarea value="@state.embedCode" readOnly="true" rows="3" fontFamily="mono" />
-            <button variant="outline" size="sm" icon="copy" onClick="@action.copyEmbed">Copy Embed Code</button>
-          </column>
+        <container type="card" prompt="padding medium">
+          <container type="column" prompt="gap small">
+            <element type="text" prompt="caption, muted">Embed Code</element>
+            <element type="textarea" prompt="read only, rows 3, font mono" use="@state.embedCode" />
+            <element type="button" prompt="style outline, size small, copy icon, on click @action.copyEmbed">Copy Embed Code</element>
+          </container>
         </container>
 
-        <row justify="end" marginTop="md">
-          <button onClick="closeDialog()">Done</button>
-        </row>
-      </column>
-    </dialog>
-
-
-    <!-- Submission Detail Dialog -->
-    <dialog name="SubmissionDetail" title="Submission Details" width="600">
-      <params>
-        <param name="id" type="uuid" />
-      </params>
-      <data>
-        <query name="submission" type="@entity.Submission" filter="id == @param.id" include="form" />
-      </data>
-
-      <column>
-        <container padding="lg" borderBottom="true">
-          <row justify="between" align="center">
-            <column>
-              <text variant="subtitle" value="@state.submission.form.name" />
-              <text variant="caption" muted="true" value="@state.submission.createdAt" format="datetime" />
-            </column>
-            <row gap="sm">
-              <button icon="download" variant="outline" size="sm" onClick="@action.exportSubmission">Export</button>
-              <button icon="trash" variant="outline" size="sm" color="danger" onClick="@action.deleteSubmission">Delete</button>
-            </row>
-          </row>
+        <container type="row" prompt="justify end, margin top medium">
+          <element type="button" prompt="on click close dialog">Done</element>
         </container>
-
-        <scroll maxHeight="400px" padding="lg">
-          <column gap="md">
-            <for each="field" in="@state.submission.form.fields">
-              <container>
-                <text variant="caption" muted="true" value="@item.label" />
-                <text variant="body" value="@state.submission.data[@item.id]" />
-              </container>
-            </for>
-          </column>
-        </scroll>
-
-        <container padding="lg" borderTop="true">
-          <row justify="between" align="center">
-            <column>
-              <text variant="caption" muted="true">Metadata</text>
-              <text variant="caption">IP: @state.submission.ipAddress</text>
-            </column>
-            <button onClick="closeDialog()">Close</button>
-          </row>
-        </container>
-      </column>
+      </container>
     </dialog>
 
 
     <!-- About Dialog -->
-    <dialog name="About" title="About FormCraft" width="400">
-      <column align="center" gap="md" padding="xl">
-        <icon name="form" size="xl" color="@theme.colors.primary" />
-        <text variant="heading2">FormCraft</text>
-        <text variant="body" muted="true">Version 1.0.0</text>
-        <text variant="caption" muted="true" align="center">
+    <dialog name="About" prompt="title About FormCraft, width 400">
+      <container type="column" prompt="align center, gap medium, padding extra-large">
+        <element type="icon" prompt="form, size extra-large, color primary" />
+        <element type="text" prompt="heading2">FormCraft</element>
+        <element type="text" prompt="body, muted">Version 1.0.0</element>
+        <element type="text" prompt="caption, muted, align center">
           A powerful form builder for creating beautiful, functional forms.
-        </text>
-        <row gap="md" marginTop="md">
-          <button variant="text" onClick="@action.openWebsite">Website</button>
-          <button variant="text" onClick="@action.openDocs">Documentation</button>
-        </row>
-        <button variant="outline" onClick="closeDialog()" marginTop="md">Close</button>
-      </column>
+        </element>
+        <container type="row" prompt="gap medium, margin top medium">
+          <element type="button" prompt="style text, on click @action.openWebsite">Website</element>
+          <element type="button" prompt="style text, on click @action.openDocs">Documentation</element>
+        </container>
+        <element type="button" prompt="style outline, on click close dialog, margin top medium">Close</element>
+      </container>
     </dialog>
 
   </dialogs>
 
 
   <!-- ==================== CONTEXT MENUS ==================== -->
-  <contextMenus>
+  <context-menus>
 
-    <contextMenu name="FormItem">
-      <menuItem icon="edit" label="Edit" onClick="openWindow(@window.FormEditor, { id: @context.id })" />
-      <menuItem icon="eye" label="Preview" onClick="openWindow(@window.Preview, { id: @context.id })" />
-      <separator />
-      <menuItem icon="copy" label="Duplicate" onClick="@action.duplicate(@context.id)" />
-      <menuItem icon="share-2" label="Share" onClick="openDialog(@dialog.Share, { id: @context.id })" enabled="@context.status == 'published'" />
-      <separator />
-      <menuItem icon="archive" label="Archive" onClick="@action.archive(@context.id)" />
-      <menuItem icon="trash" label="Delete" color="danger" onClick="@action.confirmDelete(@context.id)" />
-    </contextMenu>
+    <context-menu name="FormItem">
+      <element prompt="edit icon, on click open @window.FormEditor with id @context.id">Edit</element>
+      <element prompt="eye icon, on click open @window.Preview with id @context.id">Preview</element>
+      <element type="separator" />
+      <element prompt="copy icon, on click @action.duplicate with @context.id">Duplicate</element>
+      <element prompt="share icon, on click open @dialog.Share with id @context.id, enabled @context.status == 'published'">Share</element>
+      <element type="separator" />
+      <element prompt="archive icon, on click @action.archive with @context.id">Archive</element>
+      <element prompt="trash icon, style danger, on click @action.confirmDelete with @context.id">Delete</element>
+    </context-menu>
 
-    <contextMenu name="Field">
-      <menuItem icon="copy" label="Duplicate" shortcut="Ctrl+D" onClick="@action.duplicateField(@context.id)" />
-      <separator />
-      <menuItem icon="arrow-up" label="Move Up" onClick="@action.moveFieldUp(@context.id)" enabled="@context.index > 0" />
-      <menuItem icon="arrow-down" label="Move Down" onClick="@action.moveFieldDown(@context.id)" enabled="@context.index < @state.form.fields.length - 1" />
-      <separator />
-      <menuItem icon="trash" label="Delete" color="danger" shortcut="Delete" onClick="@action.deleteField(@context.id)" />
-    </contextMenu>
+    <context-menu name="Field">
+      <element prompt="copy icon, shortcut Ctrl+D, on click @action.duplicateField with @context.id">Duplicate</element>
+      <element type="separator" />
+      <element prompt="arrow-up icon, on click @action.moveFieldUp with @context.id, enabled @context.index > 0">Move Up</element>
+      <element prompt="arrow-down icon, on click @action.moveFieldDown with @context.id, enabled @context.index < @state.form.fields.length - 1">Move Down</element>
+      <element type="separator" />
+      <element prompt="trash icon, style danger, shortcut Delete, on click @action.deleteField with @context.id">Delete</element>
+    </context-menu>
 
-    <contextMenu name="Submission">
-      <menuItem icon="eye" label="View Details" onClick="openDialog(@dialog.SubmissionDetail, { id: @context.id })" />
-      <menuItem icon="check" label="Mark as Read" onClick="@action.markAsRead(@context.id)" enabled="!@context.isRead" />
-      <separator />
-      <menuItem icon="download" label="Export" onClick="@action.exportSubmission(@context.id)" />
-      <separator />
-      <menuItem icon="alert-triangle" label="Mark as Spam" onClick="@action.markAsSpam(@context.id)" />
-      <menuItem icon="trash" label="Delete" color="danger" onClick="@action.deleteSubmission(@context.id)" />
-    </contextMenu>
+    <context-menu name="Submission">
+      <element prompt="eye icon, on click open @dialog.SubmissionDetail with id @context.id">View Details</element>
+      <element prompt="check icon, on click @action.markAsRead with @context.id, enabled if-not @context.isRead">Mark as Read</element>
+      <element type="separator" />
+      <element prompt="download icon, on click @action.exportSubmission with @context.id">Export</element>
+      <element type="separator" />
+      <element prompt="alert-triangle icon, on click @action.markAsSpam with @context.id">Mark as Spam</element>
+      <element prompt="trash icon, style danger, on click @action.deleteSubmission with @context.id">Delete</element>
+    </context-menu>
 
-  </contextMenus>
+  </context-menus>
 
-</webapp>
+</desktopapp>

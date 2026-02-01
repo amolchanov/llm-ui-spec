@@ -1,0 +1,1250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  FormCraft - A SaaS application for creating web forms and self-hosting them
+
+  This sample demonstrates:
+  - Well-defined pages (Dashboard, Form Editor, Form List)
+  - Prompt-guided pages (Analytics, Settings, Pricing)
+  - Mixed pages (Form Builder with defined structure but prompt-guided components)
+  - Two-primitive model: <element> and <container> with type attribute
+-->
+<webapp name="FormCraft" version="1.0">
+
+  <import src="./formcraft.shared.spec.xml" />
+
+
+  <!-- ==================== GUARDS ==================== -->
+  <guards>
+    <guard name="auth" prompt="if not authenticated, redirect to @page.Login" />
+    <guard name="guest" prompt="if authenticated, redirect to @page.Dashboard" />
+    <guard name="admin" prompt="if not admin role, redirect to @page.Dashboard" />
+  </guards>
+
+
+  <!-- ==================== ACTIONS ==================== -->
+  <actions>
+    <action name="save" prompt="submit form, show success toast" />
+    <action name="delete" prompt="confirm dialog, delete item, refresh list" />
+    <action name="duplicate" prompt="duplicate item, navigate to new item" />
+    <action name="publish" prompt="publish form, show success toast" />
+    <action name="logout" prompt="clear session, redirect to login" />
+    <action name="login" prompt="authenticate user, redirect to dashboard" />
+    <action name="register" prompt="create account, redirect to onboarding" />
+  </actions>
+
+
+  <!-- ==================== LAYOUTS ==================== -->
+  <layouts>
+
+    <layout name="AppShell" src="./formcraft.layout.AppShell.spec.xml" />
+
+    <layout name="AuthLayout">
+      <container type="row" prompt="min height 100vh">
+        <container prompt="width 50%, hide below md, background primary">
+          <slot name="branding" />
+        </container>
+        <container prompt="width 50%, center, padding extra-large">
+          <slot name="content" prompt="max width 400px" />
+        </container>
+      </container>
+    </layout>
+
+    <layout name="FormEditorLayout">
+      <container type="column" prompt="min height 100vh">
+        <slot name="toolbar" prompt="position top, height 56px" />
+        <container type="row" prompt="grow">
+          <slot name="fieldPalette" prompt="width 280px" />
+          <slot name="canvas" prompt="grow, background gray-100" />
+          <slot name="properties" prompt="width 320px" />
+        </container>
+      </container>
+    </layout>
+
+    <layout name="PublicFormLayout">
+      <container prompt="center, min height 100vh, padding large, background gray-50">
+        <slot name="content" prompt="max width 640px, width 100%" />
+      </container>
+    </layout>
+
+    <layout name="MarketingLayout">
+      <container type="column" prompt="min height 100vh">
+        <slot name="header" prompt="position top, sticky" />
+        <slot name="content" prompt="grow" />
+        <slot name="footer" />
+      </container>
+    </layout>
+
+  </layouts>
+
+
+  <!-- ==================== COMPONENTS ==================== -->
+  <components>
+
+    <!-- Navigation Header -->
+    <component name="AppHeader">
+      <props>
+        <prop name="user" type="@entity.User" />
+      </props>
+
+      <container type="row" prompt="justify between, align center, padding medium, background white, border bottom">
+        <container type="row" prompt="gap large, align center">
+          <element type="link" to="@page.Dashboard">
+            <element type="image" prompt="height 32px, alt FormCraft" use="@asset.images.logo" />
+          </element>
+        </container>
+
+        <container type="row" prompt="gap medium, align center">
+          <element type="button" prompt="style ghost, help-circle icon, on click openHelp" />
+          <element type="button" prompt="style ghost, bell icon, on click openNotifications">
+            <element type="badge" use="@state.unreadNotifications" />
+          </element>
+          <container type="dropdown" prompt="trigger click">
+            <element type="@component.Avatar" prompt="src @prop.user.avatar, name @prop.user.name, size small" />
+            <container type="menu">
+              <element prompt="settings icon, to @page.Settings">Settings</element>
+              <element prompt="credit-card icon, to @page.Billing">Billing</element>
+              <element type="separator" />
+              <element prompt="log-out icon, on click @action.logout">Log out</element>
+            </container>
+          </container>
+        </container>
+      </container>
+    </component>
+
+
+    <!-- Sidebar Navigation -->
+    <component name="AppSidebar">
+      <container type="column" prompt="padding medium, gap small, background white, border right">
+        <container type="nav">
+          <element prompt="home icon, to @page.Dashboard">Dashboard</element>
+          <element prompt="file-text icon, to @page.FormList">Forms</element>
+          <element prompt="inbox icon, to @page.Submissions">Submissions</element>
+          <element prompt="bar-chart icon, to @page.Analytics">Analytics</element>
+          <element prompt="plug icon, to @page.Integrations">Integrations</element>
+        </container>
+
+        <element type="spacer" />
+
+        <!-- Plan indicator -->
+        <container prompt="padding medium, background gray-50, border radius medium">
+          <element type="text" prompt="caption, muted">Current Plan</element>
+          <element type="text" prompt="body, weight medium">{capitalize(@state.user.plan)}</element>
+          <element type="link" to="@page.Pricing" prompt="style primary" if="@state.user.plan == 'free'">Upgrade</element>
+        </container>
+      </container>
+    </component>
+
+
+    <!-- Form Card for Lists -->
+    <component name="FormCard">
+      <props>
+        <prop name="form" type="@entity.Form" prompt="required" />
+      </props>
+
+      <container type="column" prompt="padding medium, background white, border radius medium, shadow small, interactive, on click navigate to @page.FormEditor with id @prop.form.id">
+        <container type="row" prompt="justify between, align start">
+          <container type="column" prompt="gap extra-small">
+            <element type="text" prompt="subtitle, weight medium" use="@prop.form.name" />
+            <element type="text" prompt="caption, muted, truncate 2 lines" use="@prop.form.description" />
+          </container>
+          <container type="dropdown" prompt="trigger icon more-vertical, stop propagation">
+            <container type="menu">
+              <element prompt="edit icon, on click @action.onEdit">Edit</element>
+              <element prompt="copy icon, on click @action.onDuplicate">Duplicate</element>
+              <element prompt="external-link icon, on click openPreview with @prop.form.slug">Preview</element>
+              <element type="separator" />
+              <element prompt="trash icon, style danger, on click @action.onDelete">Delete</element>
+            </container>
+          </container>
+        </container>
+
+        <container type="row" prompt="gap medium, margin top medium">
+          <element type="badge" prompt="file-text icon">{@prop.form.fields.length} fields</element>
+          <element type="badge" prompt="inbox icon">{@prop.form.submissions.length} responses</element>
+          <element type="badge" use="@prop.form.status" />
+        </container>
+
+        <container type="row" prompt="justify between, align center, margin top medium">
+          <element type="text" prompt="caption, muted">
+            Updated {formatRelative(@prop.form.updatedAt)}
+          </element>
+          <element type="button" prompt="style ghost, size small, share icon, on click shareForm with @prop.form.id" if="@prop.form.status == 'published'">Share</element>
+        </container>
+      </container>
+    </component>
+
+
+    <!-- Stat Card -->
+    <component name="StatCard">
+      <props>
+        <prop name="label" type="string" prompt="required" />
+        <prop name="value" type="number" prompt="required" />
+        <prop name="icon" type="string" />
+        <prop name="trend" type="number" />
+        <prop name="trendLabel" type="string" />
+      </props>
+
+      <container type="column" prompt="padding large, background white, border radius medium, shadow small">
+        <container type="row" prompt="justify between, align center">
+          <element type="text" prompt="caption, muted" use="@prop.label" />
+          <element type="icon" use="@prop.icon" prompt="size small, muted" if="@prop.icon" />
+        </container>
+        <element type="text" prompt="heading2" use="@prop.value" />
+        <container type="row" prompt="gap extra-small, align center" if="@prop.trend">
+          <element type="icon" prompt="size extra-small" use="{@prop.trend > 0 ? 'trending-up' : 'trending-down'}" />
+          <element type="text" prompt="caption">{Math.abs(@prop.trend)}%</element>
+          <element type="text" prompt="caption, muted" use="@prop.trendLabel" />
+        </container>
+      </container>
+    </component>
+
+
+    <!-- Empty State -->
+    <component name="EmptyState">
+      <props>
+        <prop name="icon" type="string" prompt="default inbox" />
+        <prop name="title" type="string" prompt="required" />
+        <prop name="description" type="string" />
+        <prop name="actionLabel" type="string" />
+      </props>
+
+      <container type="column" prompt="align center, gap medium, padding extra-large">
+        <container prompt="center, width 64px, height 64px, border radius full, background gray-100">
+          <element type="icon" use="@prop.icon" prompt="size large, muted" />
+        </container>
+        <element type="text" prompt="heading3, align center" use="@prop.title" />
+        <element type="text" prompt="body, muted, align center, max width 300px" use="@prop.description" if="@prop.description" />
+        <element type="button" prompt="style primary, on click @action.onAction" if="@prop.actionLabel">{@prop.actionLabel}</element>
+      </container>
+    </component>
+
+
+    <!-- Field Preview (for editor) -->
+    <component name="FieldPreview">
+      <props>
+        <prop name="field" type="@entity.FormField" prompt="required" />
+        <prop name="selected" type="boolean" prompt="default false" />
+      </props>
+
+      <container type="column" prompt="
+        padding medium,
+        background white,
+        border radius medium,
+        border 2px solid primary if @prop.selected else 1px solid gray-200,
+        on click @action.onSelect,
+        draggable
+      ">
+        <container type="row" prompt="justify between, align center">
+          <container type="row" prompt="gap small, align center">
+            <element type="icon" prompt="grip-vertical, muted, cursor grab" />
+            <element type="text" prompt="body, weight medium" use="@prop.field.label" />
+            <element type="text" prompt="color danger" if="@prop.field.required">*</element>
+          </container>
+          <container type="row" prompt="gap extra-small, visible if @prop.selected">
+            <element type="button" prompt="style ghost, size extra-small, chevron-up icon, on click @action.onMoveUp" />
+            <element type="button" prompt="style ghost, size extra-small, chevron-down icon, on click @action.onMoveDown" />
+            <element type="button" prompt="style ghost, size extra-small, copy icon, on click @action.onDuplicate" />
+            <element type="button" prompt="style ghost, size extra-small, trash icon, on click @action.onDelete" />
+          </container>
+        </container>
+
+        <container prompt="margin top small, pointer events none">
+          <prompt>
+            Render a disabled preview of the form field based on @prop.field.type:
+            - text/email/phone/number: show input with placeholder
+            - textarea: show textarea
+            - select: show dropdown with options
+            - radio/checkbox: show options
+            - date/time: show date/time picker
+            - file: show file upload zone
+            - signature: show signature pad placeholder
+            - rating: show star rating
+            Show help text if present.
+          </prompt>
+        </container>
+      </container>
+    </component>
+
+  </components>
+
+
+  <!-- ==================== PAGES ==================== -->
+  <pages>
+
+    <!-- ============================================== -->
+    <!-- Dashboard Page                                 -->
+    <!-- ============================================== -->
+    <page name="Dashboard" route="/dashboard" layout="@layout.AppShell">
+      <guards>
+        <guard type="@guard.auth" />
+      </guards>
+      <data>
+        <query name="user" type="@entity.User" prompt="source auth.currentUser" />
+        <query name="forms" type="@entity.Form[]" prompt="filter owner == @state.user.id, limit 5, order by updatedAt desc" />
+        <query name="recentSubmissions" type="@entity.Submission[]" prompt="filter form.owner == @state.user.id, limit 10, order by createdAt desc" />
+        <query name="stats" prompt="source api/dashboard/stats" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <element type="@component.AppHeader" prompt="user @state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <element type="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <container type="column" prompt="gap extra-large">
+
+          <!-- Welcome Section -->
+          <container type="row" prompt="justify between, align center">
+            <container type="column" prompt="gap extra-small">
+              <element type="text" prompt="heading1">Welcome back, {@state.user.name.split(' ')[0]}</element>
+              <element type="text" prompt="body, muted">Here's what's happening with your forms</element>
+            </container>
+            <element type="button" prompt="style primary, plus icon, on click navigate to @page.FormCreate">Create Form</element>
+          </container>
+
+          <!-- Stats Grid -->
+          <container type="grid" prompt="4 columns, gap medium, responsive sm 2, md 4">
+            <element type="@component.StatCard" prompt="label Total Forms, value @state.stats.totalForms, icon file-text" />
+            <element type="@component.StatCard" prompt="label Total Submissions, value @state.stats.totalSubmissions, icon inbox, trend @state.stats.submissionsTrend, trendLabel vs last week" />
+            <element type="@component.StatCard" prompt="label Completion Rate, value @state.stats.completionRate, icon check-circle" />
+            <element type="@component.StatCard" prompt="label Active Forms, value @state.stats.activeForms, icon activity" />
+          </container>
+
+          <!-- Recent Forms -->
+          <container type="column">
+            <container type="row" prompt="justify between, align center, margin bottom medium">
+              <element type="text" prompt="heading2">Recent Forms</element>
+              <element type="link" to="@page.FormList">View all</element>
+            </container>
+
+            <container type="grid" prompt="2 columns, gap medium, responsive sm 1, md 2" if="@state.forms.length > 0" for-each="@state.forms">
+              <element type="@component.FormCard" prompt="
+                form @item,
+                on edit navigate to @page.FormEditor with id @item.id,
+                on duplicate @action.duplicate with @item.id,
+                on delete @action.delete with @item.id
+              " />
+            </container>
+            <element type="@component.EmptyState" if-not="@state.forms.length" prompt="
+              icon file-plus,
+              title No forms yet,
+              description Create your first form to start collecting responses,
+              actionLabel Create Form,
+              on action navigate to @page.FormCreate
+            " />
+          </container>
+
+          <!-- Recent Submissions -->
+          <container type="column">
+            <container type="row" prompt="justify between, align center, margin bottom medium">
+              <element type="text" prompt="heading2">Recent Submissions</element>
+              <element type="link" to="@page.Submissions">View all</element>
+            </container>
+
+            <container type="table" if="@state.recentSubmissions.length > 0">
+              <container prompt="header">
+                <element>Form</element>
+                <element>Submitted</element>
+                <element>Preview</element>
+                <element></element>
+              </container>
+              <container prompt="body" for-each="@state.recentSubmissions">
+                <container prompt="interactive, on click navigate to @page.SubmissionDetail with id @item.id">
+                  <element type="text" use="@item.form.name" />
+                  <element type="text" prompt="format relative, muted" use="@item.createdAt" />
+                  <element type="text" prompt="muted">{summarize(@item.data, 50)}</element>
+                  <element type="badge" prompt="style primary" if-not="@item.isRead">New</element>
+                </container>
+              </container>
+            </container>
+            <element type="@component.EmptyState" if-not="@state.recentSubmissions.length" prompt="
+              icon inbox,
+              title No submissions yet,
+              description Share your forms to start receiving responses
+            " />
+          </container>
+
+        </container>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- Form List Page                                 -->
+    <!-- ============================================== -->
+    <page name="FormList" route="/forms" layout="@layout.AppShell">
+      <guards>
+        <guard type="@guard.auth" />
+      </guards>
+      <data>
+        <query name="user" type="@entity.User" prompt="source auth.currentUser" />
+        <query name="forms" type="@entity.Form[]" prompt="filter owner == @state.user.id, paginated, page size 12" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <element type="@component.AppHeader" prompt="user @state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <element type="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <container type="column" prompt="gap large">
+
+          <!-- Header -->
+          <container type="row" prompt="justify between, align center">
+            <element type="text" prompt="heading1">Forms</element>
+            <element type="button" prompt="style primary, plus icon, on click navigate to @page.FormCreate">Create Form</element>
+          </container>
+
+          <!-- Filters & Search -->
+          <container type="row" prompt="justify between, align center, gap medium">
+            <element type="search" prompt="placeholder Search forms..., on change setSearchQuery" use="@state.searchQuery" />
+            <container type="row" prompt="gap small">
+              <element type="select" prompt="on change setStatusFilter" use="@state.statusFilter">
+                <element prompt="value empty">All Status</element>
+                <element prompt="value draft">Draft</element>
+                <element prompt="value published">Published</element>
+                <element prompt="value archived">Archived</element>
+              </element>
+              <element type="select" prompt="on change setSortBy" use="@state.sortBy">
+                <element prompt="value updatedAt">Last Modified</element>
+                <element prompt="value createdAt">Created Date</element>
+                <element prompt="value name">Name</element>
+                <element prompt="value submissions">Submissions</element>
+              </element>
+            </container>
+          </container>
+
+          <!-- Form Grid -->
+          <container type="grid" prompt="3 columns, gap medium, responsive sm 1, md 2, lg 3" if="@state.forms.length > 0" for-each="@state.forms">
+            <element type="@component.FormCard" prompt="
+              form @item,
+              on edit navigate to @page.FormEditor with id @item.id,
+              on duplicate @action.duplicate with @item.id,
+              on delete @action.delete with @item.id
+            " />
+          </container>
+          <element type="pagination" use="@state.forms" if="@state.forms.length > 0" />
+
+          <element type="@component.EmptyState" if-not="@state.forms.length" prompt="
+            icon file-plus,
+            title No forms found,
+            description @state.searchQuery ? 'Try a different search term' : 'Create your first form to get started',
+            actionLabel @state.searchQuery ? null : 'Create Form',
+            on action navigate to @page.FormCreate
+          " />
+
+        </container>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- Form Editor Page                               -->
+    <!-- ============================================== -->
+    <page name="FormEditor" route="/forms/:id/edit" layout="@layout.FormEditorLayout">
+      <guards>
+        <guard type="@guard.auth" />
+      </guards>
+      <data>
+        <query name="form" type="@entity.Form" prompt="filter id == @param.id, include fields, settings" />
+      </data>
+
+      <!-- Editor Toolbar -->
+      <slot target="@layout.FormEditorLayout.toolbar">
+        <container type="row" prompt="justify between, align center, padding small medium, background white, border bottom">
+          <container type="row" prompt="gap medium, align center">
+            <element type="button" prompt="style ghost, arrow-left icon, on click navigate back" />
+            <element type="input" prompt="variant ghost, size large, placeholder Untitled Form, on change updateFormName" use="@state.form.name" />
+            <element type="badge" use="@state.form.status" />
+            <element type="text" prompt="caption, muted" if="@state.isDirty">Unsaved changes</element>
+          </container>
+
+          <container type="row" prompt="gap small">
+            <element type="button" prompt="style outline, eye icon if-not @state.previewMode else edit icon, on click togglePreview">
+              {@state.previewMode ? 'Edit' : 'Preview'}
+            </element>
+            <element type="button" prompt="style outline, settings icon, on click openSettings">Settings</element>
+            <element type="button" prompt="style secondary, on click saveDraft, disabled if-not @state.isDirty">Save Draft</element>
+            <element type="button" prompt="style primary, on click publishForm">
+              {@state.form.status == 'published' ? 'Update' : 'Publish'}
+            </element>
+          </container>
+        </container>
+      </slot>
+
+      <!-- Field Palette -->
+      <slot target="@layout.FormEditorLayout.fieldPalette">
+        <container type="column" prompt="padding medium, background white, border right, scroll">
+          <element type="text" prompt="subtitle, weight medium, margin bottom medium">Add Fields</element>
+
+          <container type="column" prompt="gap extra-small">
+            <element type="text" prompt="caption, muted, margin bottom extra-small">Basic</element>
+            <container type="draggable" prompt="type field, data type text">
+              <container prompt="outline, padding small, interactive">
+                <container type="row" prompt="gap small, align center">
+                  <element type="icon" prompt="type, size small" />
+                  <element type="text">Text</element>
+                </container>
+              </container>
+            </container>
+            <container type="draggable" prompt="type field, data type email">
+              <container prompt="outline, padding small, interactive">
+                <container type="row" prompt="gap small, align center">
+                  <element type="icon" prompt="mail, size small" />
+                  <element type="text">Email</element>
+                </container>
+              </container>
+            </container>
+            <container type="draggable" prompt="type field, data type number">
+              <container prompt="outline, padding small, interactive">
+                <container type="row" prompt="gap small, align center">
+                  <element type="icon" prompt="hash, size small" />
+                  <element type="text">Number</element>
+                </container>
+              </container>
+            </container>
+            <container type="draggable" prompt="type field, data type textarea">
+              <container prompt="outline, padding small, interactive">
+                <container type="row" prompt="gap small, align center">
+                  <element type="icon" prompt="align-left, size small" />
+                  <element type="text">Long Text</element>
+                </container>
+              </container>
+            </container>
+          </container>
+
+          <container type="column" prompt="gap extra-small, margin top large">
+            <element type="text" prompt="caption, muted, margin bottom extra-small">Choice</element>
+            <container type="draggable" prompt="type field, data type select">
+              <container prompt="outline, padding small, interactive">
+                <container type="row" prompt="gap small, align center">
+                  <element type="icon" prompt="chevron-down, size small" />
+                  <element type="text">Dropdown</element>
+                </container>
+              </container>
+            </container>
+            <container type="draggable" prompt="type field, data type checkbox">
+              <container prompt="outline, padding small, interactive">
+                <container type="row" prompt="gap small, align center">
+                  <element type="icon" prompt="check-square, size small" />
+                  <element type="text">Checkbox</element>
+                </container>
+              </container>
+            </container>
+          </container>
+
+          <container type="column" prompt="gap extra-small, margin top large">
+            <element type="text" prompt="caption, muted, margin bottom extra-small">Advanced</element>
+            <container type="draggable" prompt="type field, data type date">
+              <container prompt="outline, padding small, interactive">
+                <container type="row" prompt="gap small, align center">
+                  <element type="icon" prompt="calendar, size small" />
+                  <element type="text">Date</element>
+                </container>
+              </container>
+            </container>
+            <container type="draggable" prompt="type field, data type file">
+              <container prompt="outline, padding small, interactive">
+                <container type="row" prompt="gap small, align center">
+                  <element type="icon" prompt="upload, size small" />
+                  <element type="text">File Upload</element>
+                </container>
+              </container>
+            </container>
+            <container type="draggable" prompt="type field, data type rating">
+              <container prompt="outline, padding small, interactive">
+                <container type="row" prompt="gap small, align center">
+                  <element type="icon" prompt="star, size small" />
+                  <element type="text">Rating</element>
+                </container>
+              </container>
+            </container>
+          </container>
+        </container>
+      </slot>
+
+      <!-- Form Canvas -->
+      <slot target="@layout.FormEditorLayout.canvas">
+        <container prompt="center, padding extra-large">
+          <container type="column" prompt="width 640px, background white, border radius large, shadow medium, padding extra-large">
+            <!-- Form Header -->
+            <container type="column" prompt="gap small, margin bottom large">
+              <element type="input" prompt="variant ghost, size extra-large, placeholder Form Title, on change updateFormName" use="@state.form.name" />
+              <element type="input" prompt="variant ghost, placeholder Form description (optional), on change updateFormDescription" use="@state.form.description" />
+            </container>
+
+            <!-- Fields Drop Zone -->
+            <container type="drop-zone" prompt="accept field, on drop addField, min height 200px">
+              <container type="sortable" prompt="items @state.form.fields, on reorder reorderFields" if="@state.form.fields.length > 0" for-each="@state.form.fields">
+                <element type="@component.FieldPreview" prompt="
+                  field @item,
+                  selected @item.id == @state.selectedFieldId,
+                  on select selectField with @item.id,
+                  on delete deleteField with @item.id,
+                  on duplicate duplicateField with @item.id,
+                  on move-up moveFieldUp with @item.id,
+                  on move-down moveFieldDown with @item.id
+                " />
+              </container>
+
+              <container prompt="center, padding extra-large, border 2px dashed gray-300, border radius medium" if-not="@state.form.fields.length">
+                <container type="column" prompt="align center, gap small">
+                  <element type="icon" prompt="plus-circle, size large, muted" />
+                  <element type="text" prompt="body, muted">Drag fields here or click to add</element>
+                </container>
+              </container>
+            </container>
+
+            <!-- Submit Button Preview -->
+            <container prompt="margin top large">
+              <element type="button" prompt="style primary, full width, disabled">
+                {@state.form.settings.submitButtonText || 'Submit'}
+              </element>
+            </container>
+          </container>
+        </container>
+      </slot>
+
+      <!-- Field Properties Panel -->
+      <slot target="@layout.FormEditorLayout.properties">
+        <container type="column" prompt="padding medium, background white, border left, scroll" if="@state.selectedFieldId">
+          <prompt>
+            Field properties editor for the selected field.
+            Show different options based on field type:
+
+            Common properties for all fields:
+            - Label (text input)
+            - Placeholder (text input)
+            - Help text (text input)
+            - Required (toggle)
+
+            For text/email/phone/number:
+            - Min/max length
+            - Pattern validation
+            - Custom error message
+
+            For select/radio/checkbox:
+            - Options editor (add/remove/reorder)
+            - Allow "Other" option
+
+            For date/time:
+            - Min/max date
+            - Date format
+
+            For file:
+            - Allowed file types
+            - Max file size
+            - Multiple files toggle
+
+            For rating:
+            - Max rating (1-10)
+            - Icon style (stars, hearts, etc.)
+
+            Advanced section (collapsible):
+            - Conditional logic builder
+            - Custom CSS class
+            - Field ID (readonly)
+          </prompt>
+        </container>
+        <container prompt="center, height 100%" if-not="@state.selectedFieldId">
+          <element type="text" prompt="body, muted, align center">Select a field to edit its properties</element>
+        </container>
+      </slot>
+
+      <!-- Settings Modal -->
+      <container type="modal" name="settings" prompt="title Form Settings">
+        <prompt>
+          Form settings modal with tabs:
+
+          1. General Tab:
+             - Form name, description
+             - Submit button text
+             - Success message (rich text)
+             - Redirect URL after submission
+
+          2. Notifications Tab:
+             - Email notifications toggle
+             - Notification email addresses
+             - Email template customization
+
+          3. Security Tab:
+             - Enable CAPTCHA
+             - Allow multiple submissions
+             - Close form after date
+             - Max submissions limit
+
+          4. Integrations Tab:
+             - Webhook URL
+             - Zapier connection
+             - Google Sheets integration
+
+          5. Styling Tab:
+             - Custom CSS editor
+             - Theme selection
+        </prompt>
+      </container>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- Form Create Page                               -->
+    <!-- ============================================== -->
+    <page name="FormCreate" route="/forms/new" layout="@layout.AppShell">
+      <guards>
+        <guard type="@guard.auth" />
+      </guards>
+      <data>
+        <query name="user" type="@entity.User" prompt="source auth.currentUser" />
+        <query name="templates" prompt="source api/form-templates" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <element type="@component.AppHeader" prompt="user @state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <element type="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <container type="column" prompt="gap extra-large, max width 900px, margin auto">
+
+          <container type="column" prompt="gap small">
+            <element type="text" prompt="heading1">Create a New Form</element>
+            <element type="text" prompt="body, muted">Start from scratch or choose a template</element>
+          </container>
+
+          <!-- Start from Scratch -->
+          <container type="row" prompt="gap large, padding large, background white, border radius medium, shadow small, interactive, on click createBlankForm">
+            <container prompt="center, width 64px, height 64px, background primary-50, border radius medium">
+              <element type="icon" prompt="plus, size large, color primary" />
+            </container>
+            <container type="column" prompt="gap extra-small">
+              <element type="text" prompt="subtitle, weight medium">Blank Form</element>
+              <element type="text" prompt="body, muted">Start with a blank canvas and add your own fields</element>
+            </container>
+          </container>
+
+          <!-- Templates -->
+          <container type="column">
+            <element type="text" prompt="heading2, margin bottom medium">Or start with a template</element>
+            <container type="grid" prompt="3 columns, gap medium, responsive sm 1, md 2, lg 3" for-each="@state.templates">
+              <container type="column" prompt="padding large, background white, border radius medium, shadow small, interactive, on click createFromTemplate with @item.id">
+                <container prompt="center, height 120px, background gray-50, border radius medium, margin bottom medium">
+                  <element type="icon" use="@item.icon" prompt="size extra-large, muted" />
+                </container>
+                <element type="text" prompt="subtitle, weight medium" use="@item.name" />
+                <element type="text" prompt="caption, muted" use="@item.description" />
+                <container type="row" prompt="gap small, margin top small">
+                  <element type="badge">{@item.fieldCount} fields</element>
+                  <element type="badge" use="@item.category" />
+                </container>
+              </container>
+            </container>
+          </container>
+
+        </container>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- Analytics Page (Prompt-Guided)                 -->
+    <!-- ============================================== -->
+    <page name="Analytics" route="/analytics" layout="@layout.AppShell">
+      <guards>
+        <guard type="@guard.auth" />
+      </guards>
+      <data>
+        <query name="user" type="@entity.User" prompt="source auth.currentUser" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <element type="@component.AppHeader" prompt="user @state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <element type="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <prompt>
+          Create a comprehensive analytics dashboard for form submissions.
+
+          Header section:
+          - Page title "Analytics"
+          - Date range picker (preset options: Today, Last 7 days, Last 30 days, Custom)
+          - Form selector dropdown to filter by specific form or "All Forms"
+          - Export button (CSV, PDF options)
+
+          Stats row (4 cards):
+          - Total submissions (with trend vs previous period)
+          - Completion rate (started vs completed)
+          - Average completion time
+          - Unique visitors
+
+          Charts section (2x2 grid):
+          1. Line chart: Submissions over time (daily/weekly granularity toggle)
+          2. Bar chart: Submissions by form (top 10 forms)
+          3. Pie chart: Submissions by device type (desktop, mobile, tablet)
+          4. Funnel chart: Form completion funnel (viewed -> started -> completed)
+
+          Geographic section:
+          - World map showing submission locations
+          - Table with top countries/cities
+
+          Time analysis:
+          - Heatmap showing submissions by day of week and hour
+          - Insight text like "Most submissions happen on Tuesday at 2 PM"
+
+          Make charts interactive with tooltips and click-to-drill-down.
+          Use consistent color scheme from theme.
+          Show loading skeletons while data loads.
+        </prompt>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- Submissions Page (Prompt-Guided)               -->
+    <!-- ============================================== -->
+    <page name="Submissions" route="/submissions" layout="@layout.AppShell">
+      <guards>
+        <guard type="@guard.auth" />
+      </guards>
+      <data>
+        <query name="user" type="@entity.User" prompt="source auth.currentUser" />
+        <query name="forms" type="@entity.Form[]" prompt="filter owner == @state.user.id" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <element type="@component.AppHeader" prompt="user @state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <element type="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <prompt>
+          Create an inbox-style submissions management page.
+
+          Layout: Split view with list on left (40%) and detail on right (60%)
+
+          Left panel - Submissions list:
+          - Filter bar: Form selector, Date range, Read/Unread, Spam filter
+          - Search box for searching submission content
+          - Bulk actions: Mark as read, Mark as spam, Delete, Export selected
+          - Submission list items showing:
+            - Form name
+            - First field value as preview
+            - Timestamp (relative)
+            - Unread indicator (blue dot)
+            - Spam indicator if flagged
+          - Infinite scroll pagination
+          - Click to select and view in detail panel
+
+          Right panel - Submission detail:
+          - Header with form name and submission date
+          - Action buttons: Reply (if email field exists), Mark as spam, Delete
+          - All submitted fields displayed as label-value pairs
+          - Metadata section (collapsible): IP address, User agent, Location, Referrer
+          - Navigation to previous/next submission
+
+          Empty state when no submission selected: "Select a submission to view details"
+
+          Keyboard navigation:
+          - Arrow up/down to navigate list
+          - Enter to select
+          - R to mark as read
+          - S to toggle spam
+          - Delete to delete
+        </prompt>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- Settings Page (Prompt-Guided)                  -->
+    <!-- ============================================== -->
+    <page name="Settings" route="/settings" layout="@layout.AppShell">
+      <guards>
+        <guard type="@guard.auth" />
+      </guards>
+      <data>
+        <query name="user" type="@entity.User" prompt="source auth.currentUser" />
+      </data>
+
+      <slot target="@layout.AppShell.header">
+        <element type="@component.AppHeader" prompt="user @state.user" />
+      </slot>
+
+      <slot target="@layout.AppShell.sidebar">
+        <element type="@component.AppSidebar" />
+      </slot>
+
+      <slot target="@layout.AppShell.content">
+        <prompt>
+          Create a comprehensive settings page with sidebar navigation.
+
+          Layout: Settings nav on left, content on right
+
+          Settings sections:
+
+          1. Profile
+             - Avatar upload with crop
+             - Name, email fields
+             - Password change (current + new + confirm)
+             - Two-factor authentication toggle
+             - Connected accounts (Google, GitHub)
+
+          2. Workspace
+             - Workspace name
+             - Custom domain settings
+             - Default form settings
+             - Timezone selection
+             - Date/time format preferences
+
+          3. API Keys
+             - List of existing API keys (name, created date, last used, permissions)
+             - Create new key button
+             - Regenerate/delete options
+             - Copy key functionality
+             - Usage statistics per key
+
+          4. Self-Hosting
+             - Docker deployment instructions
+             - Environment variables reference
+             - Download configuration files
+             - Health check endpoint info
+             - Backup/restore instructions
+
+          5. Notifications
+             - Email notification preferences
+             - Browser push notifications toggle
+             - Notification frequency (immediate, daily digest, weekly)
+
+          6. Danger Zone
+             - Export all data
+             - Delete account (with confirmation)
+
+          Each section should have a save button that only enables when changes are made.
+          Show success/error toasts on save.
+        </prompt>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- Login Page                                     -->
+    <!-- ============================================== -->
+    <page name="Login" route="/login" layout="@layout.AuthLayout">
+      <guards>
+        <guard type="@guard.guest" />
+      </guards>
+
+      <slot target="@layout.AuthLayout.branding">
+        <container prompt="center, height 100%, padding extra-large">
+          <container type="column" prompt="align center, gap large">
+            <element type="image" prompt="height 48px" use="@asset.images.logoWhite" />
+            <element type="text" prompt="heading1, color white">Build forms that convert</element>
+            <element type="text" prompt="body, color white, opacity 0.8, align center, max width 400px">
+              Create beautiful, responsive forms in minutes. No coding required.
+            </element>
+          </container>
+        </container>
+      </slot>
+
+      <slot target="@layout.AuthLayout.content">
+        <container type="column" prompt="gap large">
+          <container type="column" prompt="gap extra-small">
+            <element type="text" prompt="heading2">Welcome back</element>
+            <element type="text" prompt="body, muted">Sign in to your account</element>
+          </container>
+
+          <container type="form" prompt="on submit @action.login">
+            <container type="column" prompt="gap medium">
+              <element type="input" prompt="type email, required, placeholder you@example.com, auto focus">Email</element>
+              <container type="column">
+                <element type="input" prompt="type password, required">Password</element>
+                <element type="link" to="@page.ForgotPassword" prompt="caption, align right">Forgot?</element>
+              </container>
+              <element type="button" prompt="style primary, full width, type submit">Sign In</element>
+            </container>
+          </container>
+
+          <element type="separator" prompt="label or continue with" />
+
+          <container type="row" prompt="gap medium">
+            <element type="button" prompt="style outline, full width, google icon, on click loginWithGoogle">Google</element>
+            <element type="button" prompt="style outline, full width, github icon, on click loginWithGitHub">GitHub</element>
+          </container>
+
+          <element type="text" prompt="body, align center">
+            Don't have an account? <element type="link" to="@page.Register">Sign up free</element>
+          </element>
+        </container>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- Register Page (Prompt-Guided)                  -->
+    <!-- ============================================== -->
+    <page name="Register" route="/register" layout="@layout.AuthLayout">
+      <guards>
+        <guard type="@guard.guest" />
+      </guards>
+
+      <slot target="@layout.AuthLayout.branding">
+        <container prompt="center, height 100%, padding extra-large">
+          <container type="column" prompt="align center, gap large">
+            <element type="image" prompt="height 48px" use="@asset.images.logoWhite" />
+            <element type="text" prompt="heading1, color white">Start free today</element>
+            <container type="column" prompt="gap small, align start">
+              <container type="row" prompt="gap small, align center">
+                <element type="icon" prompt="check, color white" />
+                <element type="text" prompt="color white">No credit card required</element>
+              </container>
+              <container type="row" prompt="gap small, align center">
+                <element type="icon" prompt="check, color white" />
+                <element type="text" prompt="color white">3 forms free forever</element>
+              </container>
+              <container type="row" prompt="gap small, align center">
+                <element type="icon" prompt="check, color white" />
+                <element type="text" prompt="color white">100 submissions/month</element>
+              </container>
+            </container>
+          </container>
+        </container>
+      </slot>
+
+      <slot target="@layout.AuthLayout.content">
+        <prompt>
+          Create a registration form with:
+
+          Header:
+          - "Create your account" heading
+          - "Get started in seconds" subtext
+
+          Form fields:
+          - Full name (required)
+          - Email (required, validated)
+          - Password (required, with strength indicator)
+          - Show password toggle
+          - Terms acceptance checkbox with links to Terms and Privacy Policy
+
+          Submit button: "Create Account"
+
+          Social signup options:
+          - Google
+          - GitHub
+
+          Footer text: "Already have an account? Sign in"
+
+          Password requirements (show inline):
+          - At least 8 characters
+          - One uppercase letter
+          - One number
+
+          Show loading state on submit.
+          Handle errors gracefully.
+        </prompt>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- Pricing Page (Prompt-Guided)                   -->
+    <!-- ============================================== -->
+    <page name="Pricing" route="/pricing" layout="@layout.MarketingLayout">
+      <slot target="@layout.MarketingLayout.header">
+        <prompt>
+          Marketing site header with:
+          - Logo
+          - Nav links: Features, Pricing, Docs, Blog
+          - Sign in / Get Started buttons
+        </prompt>
+      </slot>
+
+      <slot target="@layout.MarketingLayout.content">
+        <prompt>
+          Create an attractive pricing page for the SaaS form builder.
+
+          Hero section:
+          - Headline: "Simple, transparent pricing"
+          - Subhead: "Start free, upgrade when you need more"
+          - Monthly/Annual toggle (show savings for annual)
+
+          Pricing cards (3 plans side by side):
+
+          1. Free Plan - $0/month
+             - 3 forms
+             - 100 submissions/month
+             - Basic fields
+             - Email notifications
+             - FormCraft branding
+             - Community support
+             - CTA: "Get Started Free"
+
+          2. Pro Plan - $29/month (or $24/month billed annually)
+             - Unlimited forms
+             - 10,000 submissions/month
+             - All field types
+             - Remove branding
+             - Custom thank you pages
+             - File uploads (1GB storage)
+             - Integrations (Zapier, Webhooks)
+             - Priority email support
+             - CTA: "Start Pro Trial" (14-day free)
+             - MOST POPULAR badge
+
+          3. Enterprise - Custom pricing
+             - Everything in Pro
+             - Unlimited submissions
+             - Unlimited storage
+             - Custom domain
+             - Self-hosting option
+             - SSO/SAML
+             - SLA guarantee
+             - Dedicated support
+             - CTA: "Contact Sales"
+
+          Feature comparison table below:
+          - Detailed feature breakdown
+          - Checkmarks and limits per plan
+
+          FAQ section:
+          - Common billing questions
+          - Accordion style
+
+          Final CTA:
+          - "Ready to get started?"
+          - Sign up button
+        </prompt>
+      </slot>
+
+      <slot target="@layout.MarketingLayout.footer">
+        <prompt>
+          Marketing footer with:
+          - Logo and tagline
+          - Link columns: Product, Resources, Company, Legal
+          - Social media links
+          - Copyright notice
+        </prompt>
+      </slot>
+    </page>
+
+
+    <!-- ============================================== -->
+    <!-- Landing Page (Prompt-Guided)                   -->
+    <!-- ============================================== -->
+    <page name="Landing" route="/" layout="@layout.MarketingLayout">
+      <slot target="@layout.MarketingLayout.header">
+        <prompt>
+          Marketing header with:
+          - Logo on left
+          - Navigation: Features, Pricing, Docs, Blog
+          - Right side: Sign In button, "Get Started Free" primary button
+          - Sticky on scroll with blur background
+        </prompt>
+      </slot>
+
+      <slot target="@layout.MarketingLayout.content">
+        <prompt>
+          Create a compelling landing page for FormCraft - a SaaS form builder.
+
+          Hero section:
+          - Large headline: "Build beautiful forms in minutes"
+          - Subheadline: "Create, share, and analyze forms without writing code. Self-host or use our cloud."
+          - Email capture input with "Get Started Free" button
+          - "No credit card required" note
+          - Hero image/illustration showing the form builder interface
+          - Social proof: "Trusted by 10,000+ businesses"
+          - Logo cloud of customer logos
+
+          Features section (3 columns):
+          1. "Drag & Drop Builder" - Visual editor, no coding
+          2. "Smart Integrations" - Connect to 100+ apps
+          3. "Self-Host Option" - Own your data, deploy anywhere
+
+          How it works (3 steps):
+          1. Create - Design your form with drag and drop
+          2. Share - Get a link or embed on your site
+          3. Analyze - View responses and insights
+
+          Testimonials section:
+          - 3 customer quotes with photos, names, companies
+          - Star ratings
+
+          Self-hosting section:
+          - "Own your data" headline
+          - Docker deployment mention
+          - One-click cloud deploy options
+
+          Final CTA section:
+          - "Ready to build better forms?"
+          - Large "Start Free" button
+          - "14-day Pro trial included"
+
+          Use animations on scroll.
+          Fully responsive design.
+        </prompt>
+      </slot>
+
+      <slot target="@layout.MarketingLayout.footer">
+        <prompt>
+          Comprehensive footer with:
+
+          4 columns:
+          1. Product: Features, Pricing, Templates, What's New
+          2. Resources: Documentation, API Reference, Guides, Blog
+          3. Company: About, Careers, Contact, Press Kit
+          4. Legal: Terms of Service, Privacy Policy, Cookie Policy, GDPR
+
+          Bottom bar:
+          - Copyright notice
+          - Social links: Twitter, GitHub, Discord, YouTube
+          - Language/region selector
+        </prompt>
+      </slot>
+    </page>
+
+  </pages>
+
+
+  <!-- ==================== CONFIG ==================== -->
+  <config>
+    <theme>
+      <value type="color" name="primary">#6366F1</value>
+      <value type="color" name="secondary">#8B5CF6</value>
+      <value type="color" name="success">#10B981</value>
+      <value type="color" name="warning">#F59E0B</value>
+      <value type="color" name="danger">#EF4444</value>
+      <value type="color" name="muted">#6B7280</value>
+      <value type="spacing" name="unit">4px</value>
+      <value type="radius" name="default">8px</value>
+    </theme>
+
+    <llm>
+      <prompt type="global">
+        Generate clean, accessible, production-ready React code.
+        Use Tailwind CSS for styling.
+        Follow the design system tokens.
+        Ensure WCAG 2.1 AA compliance.
+        Use semantic HTML elements.
+        Support keyboard navigation.
+        Add proper loading and error states.
+        Use React Query for data fetching.
+        Use React Hook Form for form handling.
+      </prompt>
+    </llm>
+  </config>
+
+</webapp>

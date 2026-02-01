@@ -10,256 +10,227 @@
   - Pull-to-refresh
   - Floating action buttons
 -->
-<webapp name="FormCraft" version="1.0">
+<mobileapp name="FormCraft" version="1.0">
 
   <import src="./formcraft.shared.spec.xml" />
 
 
-  <!-- ==================== NAVIGATION ==================== -->
-  <navigation type="tabs">
-    <tab name="forms" label="Forms" icon="file-text" screen="@screen.FormList" />
-    <tab name="submissions" label="Inbox" icon="inbox" screen="@screen.Submissions" badge="@state.unreadCount" />
-    <tab name="analytics" label="Analytics" icon="bar-chart-2" screen="@screen.Analytics" />
-    <tab name="profile" label="Profile" icon="user" screen="@screen.Profile" />
-  </navigation>
+  <!-- ==================== GUARDS ==================== -->
+  <guards>
+    <guard name="auth" prompt="if not authenticated, redirect to @screen.Login" />
+  </guards>
+
+
+  <!-- ==================== ACTIONS ==================== -->
+  <actions>
+    <action name="refresh" prompt="refresh list data" />
+    <action name="create" prompt="submit form, dismiss sheet, show success toast" />
+    <action name="delete" prompt="show confirm alert, delete item, refresh list" />
+    <action name="share" prompt="open system share sheet" />
+    <action name="search" prompt="filter list by query" />
+    <action name="publish" prompt="publish form, show success toast" />
+  </actions>
+
+
+  <!-- ==================== TAB NAVIGATION ==================== -->
+  <container type="tabs">
+    <element prompt="home icon, screen @screen.FormList">Forms</element>
+    <element prompt="inbox icon, screen @screen.Submissions, badge @state.unreadCount">Inbox</element>
+    <element prompt="bar-chart icon, screen @screen.Analytics">Analytics</element>
+    <element prompt="user icon, screen @screen.Profile">Profile</element>
+  </container>
 
 
   <!-- ==================== SCREENS ==================== -->
   <screens>
 
     <!-- Form List Screen -->
-    <screen name="FormList" initial="true">
+    <screen name="FormList" prompt="initial">
       <data>
-        <query name="forms" type="@entity.Form[]" filter="owner == @auth.user" orderBy="updatedAt desc" />
+        <query name="forms" type="@entity.Form[]" prompt="filter owner == @auth.user, order by updatedAt desc" />
       </data>
-      <localState>
-        <state name="filter" type="string" default="all" />
-      </localState>
 
-      <column safeArea="true">
-        <row padding="md" justify="between" align="center">
-          <text variant="largeTitle">Forms</text>
-          <button icon="plus" variant="primary" onClick="presentSheet(@sheet.CreateForm)" />
-        </row>
+      <container type="column" prompt="safe area">
+        <container type="row" prompt="padding medium, justify between, align center">
+          <element type="text" prompt="large title">Forms</element>
+          <element type="button" prompt="plus icon, style primary, on tap present @sheet.CreateForm" />
+        </container>
 
-        <search placeholder="Search forms..." onSearch="@action.search" padding="md" />
+        <element type="search" prompt="placeholder Search forms..., on search @action.search, padding medium" />
 
-        <segmentedControl value="@state.filter" onChange="@action.setFilter" padding="md">
-          <segment value="all" label="All" />
-          <segment value="published" label="Published" />
-          <segment value="draft" label="Drafts" />
-        </segmentedControl>
+        <container type="row" prompt="segmented control, padding medium">
+          <element prompt="value all">All</element>
+          <element prompt="value published">Published</element>
+          <element prompt="value draft">Drafts</element>
+        </container>
 
-        <list data="@state.forms | filter(@state.filter)" refreshable="true" onRefresh="@action.refresh">
-          <for each="form" in="@data">
-            <use
-              component="FormCard"
-              form="@item"
-              onClick="push(@screen.FormDetail, { id: @item.id })"
-              swipeActions="true"
-            >
-              <swipeAction side="right" icon="share-2" color="primary" onClick="presentSheet(@sheet.ShareForm, { id: @item.id })" />
-              <swipeAction side="right" icon="copy" onClick="@action.duplicate(@item.id)" />
-              <swipeAction side="right" icon="trash" color="danger" onClick="@action.delete(@item.id)" />
-            </use>
-          </for>
-          <if condition="@state.forms.length == 0">
-            <use component="EmptyState" title="No forms yet" description="Create your first form to get started" actionLabel="Create Form" onAction="presentSheet(@sheet.CreateForm)" />
-          </if>
-        </list>
-      </column>
+        <container type="list" prompt="pull to refresh @action.refresh" for-each="@state.forms">
+          <element type="@component.FormCard" prompt="swipe actions, on tap push @screen.FormDetail with id @item.id">
+            <element prompt="swipe right, share icon, style primary, on tap present @sheet.ShareForm with id @item.id" />
+            <element prompt="swipe right, copy icon, on tap @action.duplicate" />
+            <element prompt="swipe right, trash icon, style danger, on tap @action.delete" />
+          </element>
+        </container>
+
+        <element type="@component.EmptyState" if-not="@state.forms.length" prompt="
+          title No forms yet,
+          description Create your first form to get started,
+          actionLabel Create Form,
+          on action present @sheet.CreateForm
+        " />
+      </container>
     </screen>
 
 
     <!-- Form Detail Screen -->
-    <screen name="FormDetail">
-      <params>
-        <param name="id" type="uuid" required="true" />
-      </params>
+    <screen name="FormDetail" prompt="param id">
       <data>
-        <query name="form" type="@entity.Form" filter="id == @param.id" include="fields,submissions" />
+        <query name="form" type="@entity.Form" prompt="filter id == @param.id, include fields, submissions" />
       </data>
 
-      <navigationBar
-        title="@state.form.name"
-        backButton="true"
-        rightButtons="[
-          { icon: 'edit', onClick: push(@screen.FormEditor, { id: @param.id }) },
-          { icon: 'more-vertical', onClick: presentSheet(@sheet.FormActions) }
-        ]"
-      />
+      <element type="nav-bar" prompt="title @state.form.name, back button">
+        <element prompt="right, edit icon, on tap push @screen.FormEditor with id @param.id" />
+        <element prompt="right, more icon, on tap present @sheet.FormActions" />
+      </element>
 
-      <column padding="md" gap="lg">
+      <container type="column" prompt="padding medium, gap large">
         <!-- Stats -->
-        <scroll direction="horizontal" gap="md">
-          <use component="StatCard" label="Fields" value="@state.form.fields.length" compact="true" />
-          <use component="StatCard" label="Responses" value="@state.form.submissions.length" compact="true" />
-          <use component="StatCard" label="Views" value="@state.form.viewCount" compact="true" />
-        </scroll>
+        <container type="scroll" prompt="horizontal, gap medium">
+          <element type="@component.StatCard" prompt="label Fields, value @state.form.fields.length, compact" />
+          <element type="@component.StatCard" prompt="label Responses, value @state.form.submissions.length, compact" />
+          <element type="@component.StatCard" prompt="label Views, value @state.form.viewCount, compact" />
+        </container>
 
         <!-- Status & Actions -->
-        <container variant="card" padding="md">
-          <row justify="between" align="center">
-            <column gap="xs">
-              <text variant="caption" muted="true">Status</text>
-              <badge value="@state.form.status" size="lg" />
-            </column>
-            <if condition="@state.form.status == 'published'">
-              <button variant="outline" icon="share-2" onClick="presentSheet(@sheet.ShareForm)">Share</button>
-            </if>
-            <else>
-              <button variant="primary" onClick="@action.publish">Publish</button>
-            </else>
-          </row>
+        <container type="card" prompt="padding medium">
+          <container type="row" prompt="justify between, align center">
+            <container type="column" prompt="gap extra-small">
+              <element type="text" prompt="caption, muted">Status</element>
+              <element type="badge" use="@state.form.status" prompt="size large" />
+            </container>
+            <element type="button" prompt="style outline, share icon, on tap present @sheet.ShareForm" if="@state.form.status == 'published'">Share</element>
+            <element type="button" prompt="style primary, on tap @action.publish" if-not="@state.form.status == 'published'">Publish</element>
+          </container>
         </container>
 
         <!-- Recent Submissions -->
-        <section>
-          <row justify="between" align="center" marginBottom="sm">
-            <text variant="headline">Recent Responses</text>
-            <button variant="text" onClick="push(@screen.FormSubmissions, { id: @param.id })">View All</button>
-          </row>
-
-          <container variant="card">
-            <for each="submission" in="@state.form.submissions | limit(5)">
-              <use
-                component="SubmissionRow"
-                submission="@item"
-                onClick="presentSheet(@sheet.SubmissionDetail, { id: @item.id })"
-              />
-            </for>
-            <if condition="@state.form.submissions.length == 0">
-              <use component="EmptyState" icon="inbox" title="No responses yet" description="Share your form to start collecting responses" />
-            </if>
+        <container type="column">
+          <container type="row" prompt="justify between, align center, margin bottom small">
+            <element type="text" prompt="headline">Recent Responses</element>
+            <element type="button" prompt="style text, on tap push @screen.FormSubmissions with id @param.id">View All</element>
           </container>
-        </section>
-      </column>
+
+          <container type="card">
+            <container for-each="@state.form.submissions | limit(5)">
+              <element type="@component.SubmissionRow" prompt="on tap present @sheet.SubmissionDetail with id @item.id" />
+            </container>
+            <element type="@component.EmptyState" if-not="@state.form.submissions.length" prompt="
+              icon inbox,
+              title No responses yet,
+              description Share your form to start collecting responses
+            " />
+          </container>
+        </container>
+      </container>
     </screen>
 
 
     <!-- Form Editor Screen -->
-    <screen name="FormEditor">
-      <params>
-        <param name="id" type="uuid" required="true" />
-      </params>
+    <screen name="FormEditor" prompt="param id">
       <data>
-        <query name="form" type="@entity.Form" filter="id == @param.id" include="fields,settings" />
+        <query name="form" type="@entity.Form" prompt="filter id == @param.id, include fields, settings" />
       </data>
 
-      <navigationBar
-        title="Edit Form"
-        backButton="true"
-        rightButtons="[{ label: 'Save', onClick: @action.save, disabled: !@state.isDirty }]"
-      />
+      <element type="nav-bar" prompt="title Edit Form, back button">
+        <element prompt="right, label Save, on tap @action.save, disabled if-not @state.isDirty" />
+      </element>
 
-      <column>
+      <container type="column">
         <!-- Form Name -->
-        <container padding="md" background="white" borderBottom="true">
-          <input
-            value="@state.form.name"
-            variant="ghost"
-            size="lg"
-            placeholder="Form Title"
-            onChange="updateFormName"
-          />
+        <container prompt="padding medium, background white, border bottom">
+          <element type="input" prompt="variant ghost, size large, placeholder Form Title" use="@state.form.name" />
         </container>
 
         <!-- Fields List -->
-        <list data="@state.form.fields" reorderable="true" onReorder="@action.reorderFields">
-          <for each="field" in="@data">
-            <container padding="md" background="white" borderBottom="true" interactive="true" onClick="presentSheet(@sheet.EditField, { id: @item.id })">
-              <row gap="md" align="center">
-                <icon name="grip-vertical" color="@theme.colors.muted" />
-                <column grow="true" gap="xs">
-                  <row gap="sm" align="center">
-                    <text value="@item.label" variant="body" weight="medium" />
-                    <if condition="@item.required">
-                      <text value="*" color="@theme.colors.danger" />
-                    </if>
-                  </row>
-                  <text value="@item.type" variant="caption" muted="true" />
-                </column>
-                <icon name="chevron-right" color="@theme.colors.muted" />
-              </row>
+        <container type="list" prompt="reorderable, on reorder @action.reorderFields" for-each="@state.form.fields">
+          <container prompt="padding medium, background white, border bottom, interactive, on tap present @sheet.EditField with id @item.id">
+            <container type="row" prompt="gap medium, align center">
+              <element type="icon" prompt="grip-vertical, muted" />
+              <container type="column" prompt="grow, gap extra-small">
+                <container type="row" prompt="gap small, align center">
+                  <element type="text" prompt="body, weight medium" use="@item.label" />
+                  <element type="text" prompt="color danger" if="@item.required">*</element>
+                </container>
+                <element type="text" prompt="caption, muted" use="@item.type" />
+              </container>
+              <element type="icon" prompt="chevron-right, muted" />
             </container>
-          </for>
-        </list>
+          </container>
+        </container>
 
         <!-- Add Field Button -->
-        <container padding="md">
-          <button variant="outline" fullWidth="true" icon="plus" onClick="presentSheet(@sheet.AddField)">
-            Add Field
-          </button>
+        <container prompt="padding medium">
+          <element type="button" prompt="style outline, full width, plus icon, on tap present @sheet.AddField">Add Field</element>
         </container>
-      </column>
+      </container>
     </screen>
 
 
     <!-- Submissions Screen (Inbox) -->
     <screen name="Submissions">
       <data>
-        <query name="submissions" type="@entity.Submission[]" filter="form.owner == @auth.user" orderBy="createdAt desc" />
+        <query name="submissions" type="@entity.Submission[]" prompt="filter form.owner == @auth.user, order by createdAt desc" />
       </data>
-      <localState>
-        <state name="filter" type="string" default="unread" />
-      </localState>
 
-      <column safeArea="true">
-        <text variant="largeTitle" padding="md">Inbox</text>
+      <container type="column" prompt="safe area">
+        <element type="text" prompt="large title, padding medium">Inbox</element>
 
-        <segmentedControl value="@state.filter" onChange="@action.setFilter" padding="md">
-          <segment value="unread" label="Unread" badge="@state.unreadCount" />
-          <segment value="all" label="All" />
-          <segment value="spam" label="Spam" />
-        </segmentedControl>
+        <container type="row" prompt="segmented control, padding medium">
+          <element prompt="value unread, badge @state.unreadCount">Unread</element>
+          <element prompt="value all">All</element>
+          <element prompt="value spam">Spam</element>
+        </container>
 
-        <list data="@state.submissions | filter(@state.filter)" refreshable="true" grouped="true" groupBy="form.name">
-          <for each="submission" in="@data">
-            <use
-              component="SubmissionRow"
-              submission="@item"
-              onClick="presentSheet(@sheet.SubmissionDetail, { id: @item.id })"
-              swipeActions="true"
-            >
-              <swipeAction side="left" icon="check" color="success" onClick="@action.markAsRead(@item.id)" />
-              <swipeAction side="right" icon="trash" color="danger" onClick="@action.delete(@item.id)" />
-              <swipeAction side="right" icon="alert-triangle" onClick="@action.markAsSpam(@item.id)" />
-            </use>
-          </for>
-        </list>
-      </column>
+        <container type="list" prompt="pull to refresh, grouped, group by form.name" for-each="@state.submissions">
+          <element type="@component.SubmissionRow" prompt="swipe actions, on tap present @sheet.SubmissionDetail with id @item.id">
+            <element prompt="swipe left, check icon, style success, on tap @action.markAsRead" />
+            <element prompt="swipe right, trash icon, style danger, on tap @action.delete" />
+            <element prompt="swipe right, alert-triangle icon, on tap @action.markAsSpam" />
+          </element>
+        </container>
+      </container>
     </screen>
 
 
     <!-- Analytics Screen -->
     <screen name="Analytics">
       <data>
-        <query name="stats" source="api/analytics/overview" />
+        <query name="stats" prompt="source api/analytics/overview" />
       </data>
 
-      <column safeArea="true">
-        <text variant="largeTitle" padding="md">Analytics</text>
+      <container type="column" prompt="safe area">
+        <element type="text" prompt="large title, padding medium">Analytics</element>
 
-        <scroll>
-          <column padding="md" gap="lg">
+        <container type="scroll">
+          <container type="column" prompt="padding medium, gap large">
             <!-- Period Selector -->
-            <segmentedControl value="@state.period" onChange="@action.setPeriod">
-              <segment value="7d" label="7 Days" />
-              <segment value="30d" label="30 Days" />
-              <segment value="90d" label="90 Days" />
-            </segmentedControl>
+            <container type="row" prompt="segmented control">
+              <element prompt="value 7d">7 Days</element>
+              <element prompt="value 30d">30 Days</element>
+              <element prompt="value 90d">90 Days</element>
+            </container>
 
             <!-- Stats Grid -->
-            <container layout="grid" columns="2" gap="md">
-              <use component="StatCard" label="Submissions" value="@state.stats.submissions" trend="@state.stats.submissionsTrend" />
-              <use component="StatCard" label="Completion Rate" value="@state.stats.completionRate" format="percent" />
-              <use component="StatCard" label="Avg. Time" value="@state.stats.avgTime" format="duration" />
-              <use component="StatCard" label="Views" value="@state.stats.views" />
+            <container type="grid" prompt="2 columns, gap medium">
+              <element type="@component.StatCard" prompt="label Submissions, value @state.stats.submissions, trend @state.stats.submissionsTrend" />
+              <element type="@component.StatCard" prompt="label Completion Rate, value @state.stats.completionRate, format percent" />
+              <element type="@component.StatCard" prompt="label Avg Time, value @state.stats.avgTime, format duration" />
+              <element type="@component.StatCard" prompt="label Views, value @state.stats.views" />
             </container>
 
             <!-- Submissions Chart -->
-            <container variant="card" padding="md">
-              <text variant="headline" marginBottom="md">Submissions Over Time</text>
+            <container type="card" prompt="padding medium">
+              <element type="text" prompt="headline, margin bottom medium">Submissions Over Time</element>
               <prompt>
                 Line chart showing submissions per day for the selected period.
                 Interactive with touch to see daily values.
@@ -267,65 +238,63 @@
             </container>
 
             <!-- Top Forms -->
-            <container variant="card" padding="md">
-              <text variant="headline" marginBottom="md">Top Forms</text>
-              <for each="form" in="@state.stats.topForms">
-                <row padding="sm" gap="md" align="center">
-                  <text value="@item.name" grow="true" />
-                  <text value="@item.submissions" variant="body" weight="medium" />
-                </row>
-              </for>
+            <container type="card" prompt="padding medium">
+              <element type="text" prompt="headline, margin bottom medium">Top Forms</element>
+              <container for-each="@state.stats.topForms">
+                <container type="row" prompt="padding small, gap medium, align center">
+                  <element type="text" prompt="grow" use="@item.name" />
+                  <element type="text" prompt="body, weight medium" use="@item.submissions" />
+                </container>
+              </container>
             </container>
-          </column>
-        </scroll>
-      </column>
+          </container>
+        </container>
+      </container>
     </screen>
 
 
     <!-- Profile Screen -->
     <screen name="Profile">
       <data>
-        <query name="user" source="auth.currentUser" />
+        <query name="user" prompt="source auth.currentUser" />
       </data>
 
-      <column safeArea="true">
-        <column align="center" padding="xl" gap="md">
-          <use component="Avatar" src="@state.user.avatar" name="@state.user.name" size="xl" />
-          <text variant="title" value="@state.user.name" />
-          <text variant="body" color="muted" value="@state.user.email" />
-          <badge value="@state.user.plan" size="lg" />
-        </column>
+      <container type="column" prompt="safe area">
+        <container type="column" prompt="align center, padding extra-large, gap medium">
+          <element type="@component.Avatar" prompt="src @state.user.avatar, name @state.user.name, size extra-large" />
+          <element type="text" prompt="title" use="@state.user.name" />
+          <element type="text" prompt="body, muted" use="@state.user.email" />
+          <element type="badge" use="@state.user.plan" prompt="size large" />
+        </container>
 
-        <list grouped="true">
-          <listSection header="Account">
-            <listItem icon="user" label="Edit Profile" onClick="push(@screen.EditProfile)" chevron="true" />
-            <listItem icon="key" label="API Keys" onClick="push(@screen.ApiKeys)" chevron="true" />
-            <listItem icon="bell" label="Notifications" onClick="push(@screen.NotificationSettings)" chevron="true" />
-          </listSection>
+        <container type="list" prompt="grouped">
+          <container prompt="section Account">
+            <container prompt="user icon, chevron, on tap push @screen.EditProfile">Edit Profile</container>
+            <container prompt="key icon, chevron, on tap push @screen.ApiKeys">API Keys</container>
+            <container prompt="bell icon, chevron, on tap push @screen.NotificationSettings">Notifications</container>
+          </container>
 
-          <listSection header="Subscription">
-            <listItem icon="credit-card" label="Billing" onClick="push(@screen.Billing)" chevron="true" />
-            <if condition="@state.user.plan == 'free'">
-              <listItem icon="zap" label="Upgrade to Pro" color="primary" onClick="push(@screen.Upgrade)" chevron="true" />
-            </if>
-          </listSection>
+          <container prompt="section Subscription">
+            <container prompt="credit-card icon, chevron, on tap push @screen.Billing">Billing</container>
+            <container prompt="zap icon, chevron, style primary, on tap push @screen.Upgrade" if="@state.user.plan == 'free'">Upgrade to Pro</container>
+          </container>
 
-          <listSection header="Support">
-            <listItem icon="help-circle" label="Help Center" onClick="@action.openHelp" chevron="true" />
-            <listItem icon="message-circle" label="Contact Us" onClick="@action.openChat" chevron="true" />
-          </listSection>
+          <container prompt="section Support">
+            <container prompt="help-circle icon, chevron, on tap @action.openHelp">Help Center</container>
+            <container prompt="message-circle icon, chevron, on tap @action.openChat">Contact Us</container>
+          </container>
 
-          <listSection>
-            <listItem icon="log-out" label="Sign Out" color="danger" onClick="@action.logout" />
-          </listSection>
-        </list>
-      </column>
+          <container prompt="section">
+            <container prompt="log-out icon, style danger, on tap @action.logout">Sign Out</container>
+          </container>
+        </container>
+      </container>
     </screen>
 
 
     <!-- Settings Screens -->
     <screen name="EditProfile">
-      <navigationBar title="Edit Profile" backButton="true" />
+      <element type="nav-bar" prompt="title Edit Profile, back button" />
       <prompt>
         Profile edit form with:
         - Avatar upload (tap to change)
@@ -336,7 +305,7 @@
     </screen>
 
     <screen name="ApiKeys">
-      <navigationBar title="API Keys" backButton="true" />
+      <element type="nav-bar" prompt="title API Keys, back button" />
       <prompt>
         API keys management with:
         - List of existing keys (name, last used, permissions)
@@ -347,7 +316,7 @@
     </screen>
 
     <screen name="Billing">
-      <navigationBar title="Billing" backButton="true" />
+      <element type="nav-bar" prompt="title Billing, back button" />
       <prompt>
         Billing screen with:
         - Current plan card
@@ -364,116 +333,107 @@
   <sheets>
 
     <!-- Create Form Sheet -->
-    <sheet name="CreateForm" height="auto" dismissible="true">
-      <column padding="lg" gap="md">
-        <row justify="between" align="center">
-          <text variant="headline">New Form</text>
-          <button icon="x" variant="ghost" onClick="dismissSheet()" />
-        </row>
+    <sheet name="CreateForm" prompt="height auto, dismissible">
+      <container type="column" prompt="padding large, gap medium">
+        <container type="row" prompt="justify between, align center">
+          <element type="text" prompt="headline">New Form</element>
+          <element type="button" prompt="x icon, style ghost, on tap dismiss sheet" />
+        </container>
 
-        <form onSubmit="@action.createForm" onSuccess="dismissSheet(); push(@screen.FormEditor, { id: @result.id })">
-          <column gap="md">
-            <input label="Form Name" bind="name" required="true" placeholder="e.g., Contact Form" />
-            <textarea label="Description" bind="description" rows="2" placeholder="Optional description..." />
-            <button type="submit" fullWidth="true">Create Form</button>
-          </column>
-        </form>
+        <container type="form" prompt="on submit @action.create, on success dismiss sheet then push @screen.FormEditor with id @result.id">
+          <container type="column" prompt="gap medium">
+            <element type="input" prompt="required, placeholder e.g. Contact Form">Form Name</element>
+            <element type="textarea" prompt="rows 2, placeholder Optional description...">Description</element>
+            <element type="button" prompt="full width, style primary, type submit">Create Form</element>
+          </container>
+        </container>
 
-        <divider label="or start from template" />
+        <element type="separator" prompt="label or start from template" />
 
-        <scroll direction="horizontal" gap="sm">
-          <for each="template" in="@state.templates">
-            <container variant="card" padding="sm" width="120px" interactive="true" onClick="@action.createFromTemplate(@item.id)">
-              <column align="center" gap="xs">
-                <icon name="@item.icon" size="lg" color="@theme.colors.primary" />
-                <text variant="caption" align="center" value="@item.name" />
-              </column>
+        <container type="scroll" prompt="horizontal, gap small" for-each="@state.templates">
+          <container type="card" prompt="padding small, width 120px, interactive, on tap @action.createFromTemplate with id @item.id">
+            <container type="column" prompt="align center, gap extra-small">
+              <element type="icon" use="@item.icon" prompt="size large, color primary" />
+              <element type="text" prompt="caption, align center" use="@item.name" />
             </container>
-          </for>
-        </scroll>
-      </column>
+          </container>
+        </container>
+      </container>
     </sheet>
 
 
     <!-- Share Form Sheet -->
-    <sheet name="ShareForm" height="auto" dismissible="true">
-      <params>
-        <param name="id" type="uuid" />
-      </params>
+    <sheet name="ShareForm" prompt="height auto, dismissible, param id">
       <data>
-        <query name="form" type="@entity.Form" filter="id == @param.id" />
+        <query name="form" type="@entity.Form" prompt="filter id == @param.id" />
       </data>
 
-      <column padding="lg" gap="md">
-        <text variant="headline">Share Form</text>
+      <container type="column" prompt="padding large, gap medium">
+        <element type="text" prompt="headline">Share Form</element>
 
         <!-- Link -->
-        <container variant="card" padding="md">
-          <row gap="md" align="center">
-            <column grow="true">
-              <text variant="caption" muted="true">Form Link</text>
-              <text variant="body" value="@state.form.publicUrl" />
-            </column>
-            <button icon="copy" variant="ghost" onClick="@action.copyLink" />
-          </row>
+        <container type="card" prompt="padding medium">
+          <container type="row" prompt="gap medium, align center">
+            <container type="column" prompt="grow">
+              <element type="text" prompt="caption, muted">Form Link</element>
+              <element type="text" prompt="body" use="@state.form.publicUrl" />
+            </container>
+            <element type="button" prompt="copy icon, style ghost, on tap @action.copyLink" />
+          </container>
         </container>
 
         <!-- QR Code -->
-        <container align="center" padding="md">
+        <container prompt="align center, padding medium">
           <prompt>QR code for the form URL, 150x150px</prompt>
         </container>
 
         <!-- Share Options -->
-        <row gap="md" justify="center">
-          <button icon="message-circle" variant="outline" onClick="@action.shareVia('sms')">SMS</button>
-          <button icon="mail" variant="outline" onClick="@action.shareVia('email')">Email</button>
-          <button icon="share" variant="outline" onClick="@action.shareNative">More</button>
-        </row>
-      </column>
+        <container type="row" prompt="gap medium, justify center">
+          <element type="button" prompt="message-circle icon, style outline, on tap @action.shareVia with method sms">SMS</element>
+          <element type="button" prompt="mail icon, style outline, on tap @action.shareVia with method email">Email</element>
+          <element type="button" prompt="share icon, style outline, on tap @action.shareNative">More</element>
+        </container>
+      </container>
     </sheet>
 
 
     <!-- Add Field Sheet -->
-    <sheet name="AddField" height="large" dismissible="true">
-      <column>
-        <row padding="md" justify="between" align="center" borderBottom="true">
-          <text variant="headline">Add Field</text>
-          <button icon="x" variant="ghost" onClick="dismissSheet()" />
-        </row>
+    <sheet name="AddField" prompt="height large, dismissible">
+      <container type="column">
+        <container type="row" prompt="padding medium, justify between, align center, border bottom">
+          <element type="text" prompt="headline">Add Field</element>
+          <element type="button" prompt="x icon, style ghost, on tap dismiss sheet" />
+        </container>
 
-        <list grouped="true">
-          <listSection header="Basic">
-            <listItem icon="type" label="Text" onClick="@action.addField('text'); dismissSheet()" />
-            <listItem icon="mail" label="Email" onClick="@action.addField('email'); dismissSheet()" />
-            <listItem icon="hash" label="Number" onClick="@action.addField('number'); dismissSheet()" />
-            <listItem icon="phone" label="Phone" onClick="@action.addField('phone'); dismissSheet()" />
-            <listItem icon="align-left" label="Long Text" onClick="@action.addField('textarea'); dismissSheet()" />
-          </listSection>
+        <container type="list" prompt="grouped">
+          <container prompt="section Basic">
+            <container prompt="type icon, on tap @action.addField with type text then dismiss sheet">Text</container>
+            <container prompt="mail icon, on tap @action.addField with type email then dismiss sheet">Email</container>
+            <container prompt="hash icon, on tap @action.addField with type number then dismiss sheet">Number</container>
+            <container prompt="phone icon, on tap @action.addField with type phone then dismiss sheet">Phone</container>
+            <container prompt="align-left icon, on tap @action.addField with type textarea then dismiss sheet">Long Text</container>
+          </container>
 
-          <listSection header="Choice">
-            <listItem icon="chevron-down" label="Dropdown" onClick="@action.addField('select'); dismissSheet()" />
-            <listItem icon="circle" label="Radio" onClick="@action.addField('radio'); dismissSheet()" />
-            <listItem icon="check-square" label="Checkbox" onClick="@action.addField('checkbox'); dismissSheet()" />
-          </listSection>
+          <container prompt="section Choice">
+            <container prompt="chevron-down icon, on tap @action.addField with type select then dismiss sheet">Dropdown</container>
+            <container prompt="circle icon, on tap @action.addField with type radio then dismiss sheet">Radio</container>
+            <container prompt="check-square icon, on tap @action.addField with type checkbox then dismiss sheet">Checkbox</container>
+          </container>
 
-          <listSection header="Advanced">
-            <listItem icon="calendar" label="Date" onClick="@action.addField('date'); dismissSheet()" />
-            <listItem icon="clock" label="Time" onClick="@action.addField('time'); dismissSheet()" />
-            <listItem icon="upload" label="File Upload" onClick="@action.addField('file'); dismissSheet()" />
-            <listItem icon="star" label="Rating" onClick="@action.addField('rating'); dismissSheet()" />
-            <listItem icon="pen-tool" label="Signature" onClick="@action.addField('signature'); dismissSheet()" />
-          </listSection>
-        </list>
-      </column>
+          <container prompt="section Advanced">
+            <container prompt="calendar icon, on tap @action.addField with type date then dismiss sheet">Date</container>
+            <container prompt="clock icon, on tap @action.addField with type time then dismiss sheet">Time</container>
+            <container prompt="upload icon, on tap @action.addField with type file then dismiss sheet">File Upload</container>
+            <container prompt="star icon, on tap @action.addField with type rating then dismiss sheet">Rating</container>
+            <container prompt="pen-tool icon, on tap @action.addField with type signature then dismiss sheet">Signature</container>
+          </container>
+        </container>
+      </container>
     </sheet>
 
 
     <!-- Edit Field Sheet -->
-    <sheet name="EditField" height="large" dismissible="true">
-      <params>
-        <param name="id" type="uuid" />
-      </params>
-
+    <sheet name="EditField" prompt="height large, dismissible, param id">
       <prompt>
         Field editor sheet with:
         - Label input
@@ -488,59 +448,55 @@
 
 
     <!-- Submission Detail Sheet -->
-    <sheet name="SubmissionDetail" height="large" dismissible="true">
-      <params>
-        <param name="id" type="uuid" />
-      </params>
+    <sheet name="SubmissionDetail" prompt="height large, dismissible, param id">
       <data>
-        <query name="submission" type="@entity.Submission" filter="id == @param.id" include="form" />
+        <query name="submission" type="@entity.Submission" prompt="filter id == @param.id, include form" />
       </data>
 
-      <column>
-        <row padding="md" justify="between" align="center" borderBottom="true">
-          <column>
-            <text variant="headline" value="@state.submission.form.name" />
-            <text variant="caption" muted="true" value="@state.submission.createdAt" format="datetime" />
-          </column>
-          <button icon="x" variant="ghost" onClick="dismissSheet()" />
-        </row>
-
-        <scroll padding="md">
-          <column gap="md">
-            <for each="field" in="@state.submission.form.fields">
-              <container>
-                <text variant="caption" muted="true" value="@item.label" />
-                <text variant="body" value="@state.submission.data[@item.id]" />
-              </container>
-            </for>
-          </column>
-        </scroll>
-
-        <container padding="md" borderTop="true">
-          <row gap="md">
-            <button variant="outline" grow="true" icon="trash" color="danger" onClick="@action.delete">Delete</button>
-            <button variant="outline" grow="true" icon="alert-triangle" onClick="@action.markAsSpam">Spam</button>
-          </row>
+      <container type="column">
+        <container type="row" prompt="padding medium, justify between, align center, border bottom">
+          <container type="column">
+            <element type="text" prompt="headline" use="@state.submission.form.name" />
+            <element type="text" prompt="caption, muted, format datetime" use="@state.submission.createdAt" />
+          </container>
+          <element type="button" prompt="x icon, style ghost, on tap dismiss sheet" />
         </container>
-      </column>
+
+        <container type="scroll" prompt="padding medium">
+          <container type="column" prompt="gap medium" for-each="@state.submission.form.fields">
+            <container>
+              <element type="text" prompt="caption, muted" use="@item.label" />
+              <element type="text" prompt="body" use="@state.submission.data[@item.id]" />
+            </container>
+          </container>
+        </container>
+
+        <container prompt="padding medium, border top">
+          <container type="row" prompt="gap medium">
+            <element type="button" prompt="style outline, grow, trash icon, style danger, on tap @action.delete">Delete</element>
+            <element type="button" prompt="style outline, grow, alert-triangle icon, on tap @action.markAsSpam">Spam</element>
+          </container>
+        </container>
+      </container>
     </sheet>
 
   </sheets>
 
 
   <!-- ==================== ALERTS ==================== -->
+  <!-- Alert children use type inference: text for message, actions implied -->
   <alerts>
-    <alert name="ConfirmDelete" title="Delete Form?" destructive="true">
-      <text>This will permanently delete the form and all its submissions. This action cannot be undone.</text>
-      <action label="Cancel" role="cancel" />
-      <action label="Delete" role="destructive" onClick="@callback" />
+    <alert name="ConfirmDelete" prompt="title Delete Form?, style destructive">
+      <element>This will permanently delete the form and all its submissions. This action cannot be undone.</element>
+      <element prompt="role cancel">Cancel</element>
+      <element prompt="role destructive, on tap @callback">Delete</element>
     </alert>
 
-    <alert name="ConfirmPublish" title="Publish Form?">
-      <text>Your form will be publicly accessible. You can unpublish it at any time.</text>
-      <action label="Cancel" role="cancel" />
-      <action label="Publish" role="default" onClick="@callback" />
+    <alert name="ConfirmPublish" prompt="title Publish Form?">
+      <element>Your form will be publicly accessible. You can unpublish it at any time.</element>
+      <element prompt="role cancel">Cancel</element>
+      <element prompt="role default, on tap @callback">Publish</element>
     </alert>
   </alerts>
 
-</webapp>
+</mobileapp>

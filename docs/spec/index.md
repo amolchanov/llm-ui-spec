@@ -141,7 +141,7 @@ All references use the `@` prefix with a namespace:
 | `@param` | `@param.name` | URL/route parameters |
 | `@item` | `@item.field` | Current loop item |
 | `@action` | `@action.name` | Defined action |
-| `@theme` | `@theme.path` | Theme tokens |
+| `@theme` | `@theme.type.name` | Theme value (e.g., `@theme.color.primary`) |
 | `@i18n` | `@i18n.key` | Translations |
 | `@asset` | `@asset.type.name` | Static assets |
 | `@config` | `@config.path` | Config values |
@@ -590,14 +590,12 @@ Theme and application configuration.
 ```xml
 <config>
   <theme>
-    <colors>
-      <primary>#3B82F6</primary>
-      <secondary>#6B7280</secondary>
-      <success>#10B981</success>
-      <danger>#EF4444</danger>
-    </colors>
-    <spacing unit="4px" />
-    <borderRadius default="8px" />
+    <value type="color" name="primary">#3B82F6</value>
+    <value type="color" name="secondary">#6B7280</value>
+    <value type="color" name="success">#10B981</value>
+    <value type="color" name="danger">#EF4444</value>
+    <value type="spacing" name="unit">4px</value>
+    <value type="radius" name="default">8px</value>
   </theme>
 
   <i18n default="en">
@@ -613,6 +611,17 @@ Theme and application configuration.
     </prompt>
   </llm>
 </config>
+```
+
+### Referencing Theme Values
+
+Use `@theme.type.name` to reference theme values:
+
+```xml
+<element type="button" prompt="background @theme.color.primary">Submit</element>
+<container prompt="padding @theme.spacing.unit, rounded @theme.radius.default">
+  <element prompt="text color @theme.color.danger">Error message</element>
+</container>
 ```
 
 ---

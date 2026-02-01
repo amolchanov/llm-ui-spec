@@ -6,54 +6,80 @@
 
   <!-- ==================== ROOT ELEMENTS ==================== -->
 
-  <!-- Main webapp root element -->
-  <xs:element name="webapp">
+  <!-- Webapp root -->
+  <xs:element name="webapp" type="appType" />
+
+  <!-- Mobile app root -->
+  <xs:element name="mobileapp" type="appType" />
+
+  <!-- Desktop app root -->
+  <xs:element name="desktopapp" type="appType" />
+
+  <xs:complexType name="appType">
+    <xs:sequence>
+      <xs:element ref="import" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element ref="config" minOccurs="0" />
+      <xs:element ref="entities" minOccurs="0" />
+      <xs:element ref="guards" minOccurs="0" />
+      <xs:element ref="actions" minOccurs="0" />
+      <xs:element ref="components" minOccurs="0" />
+      <xs:element ref="layouts" minOccurs="0" />
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+    </xs:sequence>
+    <xs:attribute name="name" type="xs:string" use="required" />
+    <xs:attribute name="version" type="xs:string" />
+  </xs:complexType>
+
+  <xs:element name="import">
     <xs:complexType>
+      <xs:attribute name="src" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ==================== TWO PRIMITIVES ==================== -->
+
+  <!-- Element: Leaf node (no children) -->
+  <xs:element name="element">
+    <xs:complexType mixed="true">
       <xs:sequence>
-        <xs:element ref="entities" minOccurs="0" />
-        <xs:element ref="layouts" minOccurs="0" />
-        <xs:element ref="components" minOccurs="0" />
-        <xs:element ref="pages" />
-        <xs:element ref="navigation" minOccurs="0" />
-        <xs:element ref="config" minOccurs="0" />
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
       </xs:sequence>
-      <xs:attribute name="name" type="xs:string" use="required" />
-      <xs:attribute name="version" type="xs:string" />
-      <xs:attribute name="designSystem" type="xs:string" />
+      <xs:attribute name="name" type="xs:string" />
+      <xs:attribute name="type" type="xs:string" />
+      <xs:attribute name="prompt" type="xs:string" />
+      <xs:attribute name="use" type="xs:string" />
+      <xs:attribute name="if" type="xs:string" />
+      <xs:attribute name="if-not" type="xs:string" />
+      <xs:attribute name="for-each" type="xs:string" />
+      <xs:attribute name="to" type="xs:string" />
+      <xs:anyAttribute processContents="lax" />
     </xs:complexType>
   </xs:element>
 
-  <!-- External spec file root element -->
-  <xs:element name="spec">
-    <xs:complexType>
-      <xs:choice>
-        <xs:element ref="entity" />
-        <xs:element ref="layout" />
-        <xs:element ref="component" />
-        <xs:element ref="page" />
-      </xs:choice>
-      <xs:attribute name="type" type="specType" use="required" />
-      <xs:attribute name="webapp" type="xs:string" />
+  <!-- Container: Node with children -->
+  <xs:element name="container">
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" />
+      <xs:attribute name="type" type="xs:string" />
+      <xs:attribute name="prompt" type="xs:string" />
+      <xs:attribute name="use" type="xs:string" />
+      <xs:attribute name="if" type="xs:string" />
+      <xs:attribute name="if-not" type="xs:string" />
+      <xs:attribute name="for-each" type="xs:string" />
+      <xs:anyAttribute processContents="lax" />
     </xs:complexType>
   </xs:element>
-
-  <xs:simpleType name="specType">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="entity" />
-      <xs:enumeration value="layout" />
-      <xs:enumeration value="component" />
-      <xs:enumeration value="page" />
-    </xs:restriction>
-  </xs:simpleType>
 
   <!-- ==================== ENTITIES ==================== -->
+
   <xs:element name="entities">
     <xs:complexType>
       <xs:sequence>
         <xs:element ref="entity" minOccurs="0" maxOccurs="unbounded" />
       </xs:sequence>
-      <!-- src: path to directory containing entity spec files -->
-      <xs:attribute name="src" type="xs:string" />
     </xs:complexType>
   </xs:element>
 
@@ -63,8 +89,6 @@
         <xs:element ref="field" minOccurs="0" maxOccurs="unbounded" />
       </xs:sequence>
       <xs:attribute name="name" type="xs:string" use="required" />
-      <!-- src: path to external entity spec file -->
-      <xs:attribute name="src" type="xs:string" />
     </xs:complexType>
   </xs:element>
 
@@ -72,18 +96,8 @@
     <xs:complexType>
       <xs:attribute name="name" type="xs:string" use="required" />
       <xs:attribute name="type" type="fieldType" use="required" />
-      <xs:attribute name="required" type="xs:boolean" />
-      <xs:attribute name="default" type="xs:string" />
-      <xs:attribute name="values" type="xs:string" />
-      <xs:attribute name="ref" type="xs:string" />
-      <xs:attribute name="cardinality" type="cardinalityType" />
-      <xs:attribute name="unique" type="xs:boolean" />
-      <xs:attribute name="minLength" type="xs:integer" />
-      <xs:attribute name="maxLength" type="xs:integer" />
-      <xs:attribute name="min" type="xs:decimal" />
-      <xs:attribute name="max" type="xs:decimal" />
-      <xs:attribute name="pattern" type="xs:string" />
-      <xs:attribute name="ordered" type="xs:boolean" />
+      <xs:attribute name="prompt" type="xs:string" />
+      <xs:anyAttribute processContents="lax" />
     </xs:complexType>
   </xs:element>
 
@@ -111,93 +125,48 @@
     </xs:restriction>
   </xs:simpleType>
 
-  <xs:simpleType name="cardinalityType">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="one" />
-      <xs:enumeration value="many" />
-    </xs:restriction>
-  </xs:simpleType>
+  <!-- ==================== GUARDS ==================== -->
 
-  <!-- ==================== LAYOUTS ==================== -->
-  <xs:element name="layouts">
+  <xs:element name="guards">
     <xs:complexType>
       <xs:sequence>
-        <xs:element ref="layout" minOccurs="0" maxOccurs="unbounded" />
+        <xs:element ref="guard" maxOccurs="unbounded" />
       </xs:sequence>
-      <!-- src: path to directory containing layout spec files -->
-      <xs:attribute name="src" type="xs:string" />
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="layout">
+  <xs:element name="guard">
     <xs:complexType>
-      <xs:sequence>
-        <xs:choice minOccurs="0" maxOccurs="unbounded">
-          <xs:element ref="slot" />
-          <xs:element ref="container" />
-        </xs:choice>
-      </xs:sequence>
-      <xs:attribute name="name" type="xs:string" use="required" />
-      <!-- src: path to external layout spec file -->
-      <xs:attribute name="src" type="xs:string" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="slot">
-    <xs:complexType mixed="true">
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
       <xs:attribute name="name" type="xs:string" />
-      <xs:attribute name="target" type="xs:string" />
-      <xs:attribute name="position" type="positionType" />
-      <xs:attribute name="sticky" type="xs:boolean" />
-      <xs:attribute name="width" type="xs:string" />
-      <xs:attribute name="height" type="xs:string" />
-      <xs:attribute name="maxWidth" type="xs:string" />
-      <xs:attribute name="minHeight" type="xs:string" />
-      <xs:attribute name="grow" type="xs:boolean" />
-      <xs:attribute name="scroll" type="xs:boolean" />
-      <xs:attribute name="collapsible" type="xs:boolean" />
-      <xs:attribute name="optional" type="xs:boolean" />
-      <xs:attribute name="required" type="xs:boolean" />
-      <xs:attribute name="padding" type="xs:string" />
-      <xs:attribute name="breakpoint" type="xs:string" />
-      <xs:attribute name="hideBelow" type="xs:string" />
-      <xs:attribute name="background" type="xs:string" />
-      <!-- Editor hint: role controls editor display (content vs chrome) -->
-      <xs:attribute name="role" type="editorRoleType" />
-      <!-- Prompt support: use attribute for short prompts, nested <prompt> for long ones -->
+      <xs:attribute name="type" type="xs:string" />
       <xs:attribute name="prompt" type="xs:string" />
-      <!-- Allow prompt:* and editor:* namespace attributes -->
-      <xs:anyAttribute namespace="http://llm-ui-spec.org/prompt http://llm-ui-spec.org/editor" processContents="lax" />
     </xs:complexType>
   </xs:element>
 
-  <xs:simpleType name="editorRoleType">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="content" />
-      <xs:enumeration value="chrome" />
-    </xs:restriction>
-  </xs:simpleType>
+  <!-- ==================== ACTIONS ==================== -->
 
-  <xs:simpleType name="positionType">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="top" />
-      <xs:enumeration value="bottom" />
-      <xs:enumeration value="left" />
-      <xs:enumeration value="right" />
-    </xs:restriction>
-  </xs:simpleType>
+  <xs:element name="actions">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="action" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="action">
+    <xs:complexType>
+      <xs:attribute name="name" type="xs:string" use="required" />
+      <xs:attribute name="prompt" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
 
   <!-- ==================== COMPONENTS ==================== -->
+
   <xs:element name="components">
     <xs:complexType>
       <xs:sequence>
         <xs:element ref="component" minOccurs="0" maxOccurs="unbounded" />
       </xs:sequence>
-      <!-- src: path to directory containing component spec files -->
-      <xs:attribute name="src" type="xs:string" />
     </xs:complexType>
   </xs:element>
 
@@ -205,13 +174,9 @@
     <xs:complexType mixed="true">
       <xs:sequence>
         <xs:element ref="props" minOccurs="0" />
-        <xs:element ref="actions" minOccurs="0" />
         <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
       </xs:sequence>
       <xs:attribute name="name" type="xs:string" use="required" />
-      <xs:attribute name="entity" type="xs:string" />
-      <!-- src: path to external component spec file -->
-      <xs:attribute name="src" type="xs:string" />
     </xs:complexType>
   </xs:element>
 
@@ -227,85 +192,110 @@
     <xs:complexType>
       <xs:attribute name="name" type="xs:string" use="required" />
       <xs:attribute name="type" type="xs:string" use="required" />
-      <xs:attribute name="required" type="xs:boolean" />
-      <xs:attribute name="default" type="xs:string" />
-      <xs:attribute name="values" type="xs:string" />
-      <xs:attribute name="fallback" type="xs:boolean" />
+      <xs:attribute name="prompt" type="xs:string" />
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="actions">
+  <!-- ==================== LAYOUTS ==================== -->
+
+  <xs:element name="layouts">
     <xs:complexType>
       <xs:sequence>
-        <xs:element ref="action" maxOccurs="unbounded" />
+        <xs:element ref="layout" minOccurs="0" maxOccurs="unbounded" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="action">
+  <xs:element name="layout">
     <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+      </xs:sequence>
       <xs:attribute name="name" type="xs:string" use="required" />
-      <xs:attribute name="params" type="xs:string" />
-      <xs:attribute name="icon" type="xs:string" />
-      <xs:attribute name="variant" type="xs:string" />
-      <xs:attribute name="onClick" type="xs:string" />
-      <xs:attribute name="to" type="xs:string" />
-      <xs:attribute name="confirm" type="xs:boolean" />
     </xs:complexType>
   </xs:element>
 
-  <!-- ==================== PAGES ==================== -->
+  <xs:element name="slot">
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" />
+      <xs:attribute name="target" type="xs:string" />
+      <xs:attribute name="prompt" type="xs:string" />
+      <xs:anyAttribute processContents="lax" />
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ==================== PAGES (Webapp) ==================== -->
+
   <xs:element name="pages">
     <xs:complexType>
       <xs:sequence>
         <xs:element ref="page" minOccurs="0" maxOccurs="unbounded" />
       </xs:sequence>
-      <!-- src: path to directory containing page spec files -->
-      <xs:attribute name="src" type="xs:string" />
     </xs:complexType>
   </xs:element>
 
   <xs:element name="page">
     <xs:complexType mixed="true">
       <xs:sequence>
-        <xs:element ref="params" minOccurs="0" />
+        <xs:element ref="guards" minOccurs="0" />
         <xs:element ref="data" minOccurs="0" />
-        <xs:element ref="localState" minOccurs="0" />
         <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
       </xs:sequence>
       <xs:attribute name="name" type="xs:string" use="required" />
       <xs:attribute name="route" type="xs:string" />
       <xs:attribute name="layout" type="xs:string" />
-      <xs:attribute name="auth" type="authType" />
-      <xs:attribute name="entity" type="xs:string" />
-      <xs:attribute name="title" type="xs:string" />
-      <!-- src: path to external page spec file -->
-      <xs:attribute name="src" type="xs:string" />
+      <xs:attribute name="prompt" type="xs:string" />
     </xs:complexType>
   </xs:element>
 
-  <xs:simpleType name="authType">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="required" />
-      <xs:enumeration value="guest" />
-      <xs:enumeration value="none" />
-    </xs:restriction>
-  </xs:simpleType>
+  <!-- ==================== SCREENS (Mobile) ==================== -->
 
-  <xs:element name="params">
+  <xs:element name="screens">
     <xs:complexType>
       <xs:sequence>
-        <xs:element ref="param" maxOccurs="unbounded" />
+        <xs:element ref="screen" minOccurs="0" maxOccurs="unbounded" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="param">
-    <xs:complexType>
+  <xs:element name="screen">
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:element ref="guards" minOccurs="0" />
+        <xs:element ref="data" minOccurs="0" />
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+      </xs:sequence>
       <xs:attribute name="name" type="xs:string" use="required" />
-      <xs:attribute name="type" type="xs:string" use="required" />
+      <xs:attribute name="prompt" type="xs:string" />
     </xs:complexType>
   </xs:element>
+
+  <!-- ==================== VIEWS (Desktop) ==================== -->
+
+  <xs:element name="views">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="view" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="view">
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:element ref="guards" minOccurs="0" />
+        <xs:element ref="data" minOccurs="0" />
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required" />
+      <xs:attribute name="prompt" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ==================== DATA ==================== -->
 
   <xs:element name="data">
     <xs:complexType>
@@ -319,45 +309,122 @@
     <xs:complexType>
       <xs:attribute name="name" type="xs:string" use="required" />
       <xs:attribute name="type" type="xs:string" />
-      <xs:attribute name="source" type="xs:string" />
-      <xs:attribute name="filter" type="xs:string" />
-      <xs:attribute name="include" type="xs:string" />
-      <xs:attribute name="limit" type="xs:integer" />
-      <xs:attribute name="orderBy" type="xs:string" />
-      <xs:attribute name="paginated" type="xs:boolean" />
-      <xs:attribute name="pageSize" type="xs:integer" />
+      <xs:attribute name="prompt" type="xs:string" />
+      <xs:anyAttribute processContents="lax" />
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="localState">
+  <!-- ==================== MODALS (Webapp) ==================== -->
+
+  <xs:element name="modals">
     <xs:complexType>
       <xs:sequence>
-        <xs:element ref="state" maxOccurs="unbounded" />
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="state">
+  <!-- ==================== SHEETS (Mobile) ==================== -->
+
+  <xs:element name="sheets">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="sheet" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="sheet">
     <xs:complexType mixed="true">
       <xs:sequence>
         <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
       </xs:sequence>
       <xs:attribute name="name" type="xs:string" use="required" />
-      <xs:attribute name="type" type="xs:string" />
-      <xs:attribute name="default" type="xs:string" />
-      <xs:attribute name="bind" type="xs:string" />
+      <xs:attribute name="prompt" type="xs:string" />
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="states">
+  <!-- ==================== ALERTS (Mobile) ==================== -->
+
+  <xs:element name="alerts">
     <xs:complexType>
       <xs:sequence>
-        <xs:element ref="state" maxOccurs="unbounded" />
+        <xs:element ref="alert" minOccurs="0" maxOccurs="unbounded" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
 
+  <xs:element name="alert">
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required" />
+      <xs:attribute name="prompt" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ==================== DIALOGS (Desktop) ==================== -->
+
+  <xs:element name="dialogs">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="dialog" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="dialog">
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required" />
+      <xs:attribute name="prompt" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ==================== WINDOWS (Desktop) ==================== -->
+
+  <xs:element name="windows">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="window" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="window">
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" />
+      <xs:attribute name="prompt" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ==================== CONTEXT MENUS (Desktop) ==================== -->
+
+  <xs:element name="context-menus">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="context-menu" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="context-menu">
+    <xs:complexType mixed="true">
+      <xs:sequence>
+        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+
   <!-- ==================== PROMPT ==================== -->
+
   <xs:element name="prompt">
     <xs:complexType mixed="true">
       <xs:attribute name="context" type="xs:boolean" />
@@ -365,409 +432,32 @@
       <xs:attribute name="constraints" type="xs:boolean" />
       <xs:attribute name="for" type="xs:string" />
       <xs:attribute name="type" type="xs:string" />
-      <xs:attribute name="severity" type="xs:string" />
-    </xs:complexType>
-  </xs:element>
-
-  <!-- ==================== CONTAINER ==================== -->
-  <xs:element name="container">
-    <xs:complexType mixed="true">
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-      <xs:attribute name="layout" type="layoutType" />
-      <xs:attribute name="gap" type="sizeType" />
-      <xs:attribute name="padding" type="xs:string" />
-      <xs:attribute name="margin" type="xs:string" />
-      <xs:attribute name="align" type="alignType" />
-      <xs:attribute name="justify" type="justifyType" />
-      <xs:attribute name="width" type="xs:string" />
-      <xs:attribute name="height" type="xs:string" />
-      <xs:attribute name="maxWidth" type="xs:string" />
-      <xs:attribute name="minHeight" type="xs:string" />
-      <xs:attribute name="grow" type="xs:boolean" />
-      <xs:attribute name="scroll" type="xs:boolean" />
-      <xs:attribute name="background" type="xs:string" />
-      <xs:attribute name="borderRadius" type="xs:string" />
-      <xs:attribute name="border" type="xs:string" />
-      <xs:attribute name="borderBottom" type="xs:boolean" />
-      <xs:attribute name="borderRight" type="xs:boolean" />
-      <xs:attribute name="shadow" type="xs:string" />
-      <xs:attribute name="interactive" type="xs:boolean" />
-      <xs:attribute name="onClick" type="xs:string" />
-      <xs:attribute name="name" type="xs:string" />
-      <xs:attribute name="marginTop" type="xs:string" />
-      <xs:attribute name="marginBottom" type="xs:string" />
-      <xs:attribute name="paddingLeft" type="xs:string" />
-      <xs:attribute name="visible" type="xs:string" />
-      <xs:attribute name="pointerEvents" type="xs:string" />
-      <xs:attribute name="fullHeight" type="xs:boolean" />
-      <xs:attribute name="responsive" type="xs:string" />
-      <xs:attribute name="columns" type="xs:string" />
-      <xs:attribute name="cursor" type="xs:string" />
-      <xs:attribute name="draggable" type="xs:boolean" />
-      <xs:attribute name="variant" type="xs:string" />
-      <xs:attribute name="opacity" type="xs:string" />
-      <!-- Editor hint: role controls editor display (content vs chrome) -->
-      <xs:attribute name="role" type="editorRoleType" />
-      <!-- Prompt support: use attribute for short prompts, nested <prompt> for long ones -->
-      <xs:attribute name="prompt" type="xs:string" />
-      <!-- Allow prompt:* and editor:* namespace attributes -->
-      <xs:anyAttribute namespace="http://llm-ui-spec.org/prompt http://llm-ui-spec.org/editor" processContents="lax" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:simpleType name="layoutType">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="row" />
-      <xs:enumeration value="column" />
-      <xs:enumeration value="stack" />
-      <xs:enumeration value="grid" />
-      <xs:enumeration value="center" />
-    </xs:restriction>
-  </xs:simpleType>
-
-  <xs:simpleType name="sizeType">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="xs" />
-      <xs:enumeration value="sm" />
-      <xs:enumeration value="md" />
-      <xs:enumeration value="lg" />
-      <xs:enumeration value="xl" />
-    </xs:restriction>
-  </xs:simpleType>
-
-  <xs:simpleType name="alignType">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="start" />
-      <xs:enumeration value="center" />
-      <xs:enumeration value="end" />
-      <xs:enumeration value="stretch" />
-    </xs:restriction>
-  </xs:simpleType>
-
-  <xs:simpleType name="justifyType">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="start" />
-      <xs:enumeration value="center" />
-      <xs:enumeration value="end" />
-      <xs:enumeration value="between" />
-      <xs:enumeration value="around" />
-    </xs:restriction>
-  </xs:simpleType>
-
-  <!-- ==================== NAVIGATION ==================== -->
-  <xs:element name="navigation">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element ref="guards" minOccurs="0" />
-        <xs:element ref="flows" minOccurs="0" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="guards">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element ref="guard" maxOccurs="unbounded" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="guard">
-    <xs:complexType>
-      <xs:attribute name="name" type="xs:string" use="required" />
-      <xs:attribute name="redirect" type="xs:string" use="required" />
-      <xs:attribute name="message" type="xs:string" />
-      <xs:attribute name="role" type="xs:string" />
-      <xs:attribute name="condition" type="xs:string" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="flows">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element ref="flow" maxOccurs="unbounded" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="flow">
-    <xs:complexType mixed="true">
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-      <xs:attribute name="name" type="xs:string" use="required" />
     </xs:complexType>
   </xs:element>
 
   <!-- ==================== CONFIG ==================== -->
+
   <xs:element name="config">
     <xs:complexType>
       <xs:sequence>
-        <xs:element ref="theme" minOccurs="0" />
-        <xs:element ref="i18n" minOccurs="0" />
-        <xs:element ref="assets" minOccurs="0" />
-        <xs:element ref="llm" minOccurs="0" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="theme">
-    <xs:complexType>
-      <xs:sequence>
         <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="i18n">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element ref="locale" maxOccurs="unbounded" />
-      </xs:sequence>
-      <xs:attribute name="default" type="xs:string" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="locale">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-      <xs:attribute name="name" type="xs:string" use="required" />
-      <xs:attribute name="src" type="xs:string" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="assets">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="llm">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element ref="prompt" maxOccurs="unbounded" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-
-  <!-- ==================== COMMON ELEMENTS ==================== -->
-  <xs:element name="text">
-    <xs:complexType mixed="true">
-      <xs:attribute name="value" type="xs:string" />
-      <xs:attribute name="variant" type="xs:string" />
-      <xs:attribute name="weight" type="xs:string" />
-      <xs:attribute name="muted" type="xs:boolean" />
-      <xs:attribute name="truncate" type="xs:string" />
-      <xs:attribute name="align" type="xs:string" />
-      <xs:attribute name="color" type="xs:string" />
-      <xs:attribute name="format" type="xs:string" />
-      <xs:attribute name="maxWidth" type="xs:string" />
-      <xs:attribute name="strikethrough" type="xs:string" />
-      <xs:attribute name="opacity" type="xs:string" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="button">
-    <xs:complexType mixed="true">
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-      <xs:attribute name="variant" type="xs:string" />
-      <xs:attribute name="size" type="xs:string" />
-      <xs:attribute name="icon" type="xs:string" />
-      <xs:attribute name="onClick" type="xs:string" />
-      <xs:attribute name="disabled" type="xs:string" />
-      <xs:attribute name="loading" type="xs:string" />
-      <xs:attribute name="type" type="xs:string" />
-      <xs:attribute name="fullWidth" type="xs:boolean" />
-      <xs:attribute name="stopPropagation" type="xs:boolean" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="link">
-    <xs:complexType mixed="true">
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-      <xs:attribute name="to" type="xs:string" use="required" />
-      <xs:attribute name="variant" type="xs:string" />
-      <xs:attribute name="external" type="xs:boolean" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="icon">
-    <xs:complexType>
-      <xs:attribute name="name" type="xs:string" use="required" />
-      <xs:attribute name="size" type="xs:string" />
-      <xs:attribute name="color" type="xs:string" />
-      <xs:attribute name="cursor" type="xs:string" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="image">
-    <xs:complexType>
-      <xs:attribute name="src" type="xs:string" use="required" />
-      <xs:attribute name="alt" type="xs:string" />
-      <xs:attribute name="width" type="xs:string" />
-      <xs:attribute name="height" type="xs:string" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="use">
-    <xs:complexType mixed="true">
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-      <xs:attribute name="component" type="xs:string" use="required" />
-      <xs:anyAttribute processContents="lax" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="if">
-    <xs:complexType mixed="true">
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-      <xs:attribute name="condition" type="xs:string" use="required" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="else">
-    <xs:complexType mixed="true">
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="for">
-    <xs:complexType mixed="true">
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-      <xs:attribute name="each" type="xs:string" use="required" />
-      <xs:attribute name="in" type="xs:string" use="required" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="section">
-    <xs:complexType mixed="true">
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-      <xs:attribute name="name" type="xs:string" />
-      <xs:attribute name="layout" type="xs:string" />
-      <xs:attribute name="columns" type="xs:string" />
-      <xs:attribute name="gap" type="xs:string" />
-      <xs:attribute name="responsive" type="xs:string" />
-      <!-- Editor hint: role controls editor display (content vs chrome) -->
-      <xs:attribute name="role" type="editorRoleType" />
-      <!-- Allow prompt:* and editor:* namespace attributes -->
-      <xs:anyAttribute namespace="http://llm-ui-spec.org/prompt http://llm-ui-spec.org/editor" processContents="lax" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="form">
-    <xs:complexType mixed="true">
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-      <xs:attribute name="onSubmit" type="xs:string" />
-      <xs:attribute name="data" type="xs:string" />
-      <xs:attribute name="entity" type="xs:string" />
-      <xs:attribute name="validation" type="xs:boolean" />
-      <xs:attribute name="onCancel" type="xs:string" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="list">
-    <xs:complexType mixed="true">
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-      <xs:attribute name="data" type="xs:string" use="required" />
-      <xs:attribute name="empty" type="xs:string" />
-      <xs:attribute name="emptyProps" type="xs:string" />
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="template">
-    <xs:complexType mixed="true">
-      <xs:sequence>
-        <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
+  <!-- ==================== GENERIC CONTENT ==================== -->
 
   <!-- Allow any other elements with any attributes for flexibility -->
-  <!-- Layout containers -->
-  <xs:element name="stack" type="anyContent" />
-  <xs:element name="grid" type="anyContent" />
-  <xs:element name="card" type="anyContent" />
-  <xs:element name="nav" type="anyContent" />
-  <xs:element name="navItem" type="anyContent" />
-  <xs:element name="dropdown" type="anyContent" />
-  <xs:element name="menu" type="anyContent" />
-  <xs:element name="menuItem" type="anyContent" />
-  <xs:element name="divider" type="anyContent" />
-  <xs:element name="badge" type="anyContent" />
-  <xs:element name="tag" type="anyContent" />
-  <xs:element name="table" type="anyContent" />
-  <xs:element name="thead" type="anyContent" />
-  <xs:element name="tbody" type="anyContent" />
-  <xs:element name="tr" type="anyContent" />
-  <xs:element name="th" type="anyContent" />
-  <xs:element name="td" type="anyContent" />
-  <xs:element name="input" type="anyContent" />
-  <xs:element name="select" type="anyContent" />
-  <xs:element name="option" type="anyContent" />
-  <xs:element name="checkbox" type="anyContent" />
-  <xs:element name="search" type="anyContent" />
-  <xs:element name="pagination" type="anyContent" />
-  <xs:element name="filter" type="anyContent" />
-  <xs:element name="filters" type="anyContent" />
-  <xs:element name="spacer" type="anyContent" />
-  <xs:element name="spinner" type="anyContent" />
-  <xs:element name="overlay" type="anyContent" />
-  <xs:element name="alert" type="anyContent" />
-  <xs:element name="modal" type="anyContent" />
-  <xs:element name="modals" type="anyContent" />
-  <xs:element name="trigger" type="anyContent" />
-  <xs:element name="draggable" type="anyContent" />
-  <xs:element name="dropZone" type="anyContent" />
-  <xs:element name="sortable" type="anyContent" />
-  <xs:element name="colors" type="anyContent" />
-  <xs:element name="primary" type="anyContent" />
-  <xs:element name="secondary" type="anyContent" />
-  <xs:element name="success" type="anyContent" />
-  <xs:element name="warning" type="anyContent" />
-  <xs:element name="danger" type="anyContent" />
-  <xs:element name="muted" type="anyContent" />
-  <xs:element name="gray" type="anyContent" />
-  <xs:element name="spacing" type="anyContent" />
-  <xs:element name="borderRadius" type="anyContent" />
-  <xs:element name="shadows" type="anyContent" />
-  <xs:element name="images" type="anyContent" />
-  <xs:element name="logo" type="anyContent" />
-  <xs:element name="logoWhite" type="anyContent" />
-  <xs:element name="favicon" type="anyContent" />
-  <xs:element name="statCard" type="anyContent" />
-  <xs:element name="fieldPaletteItem" type="anyContent" />
-  <xs:element name="suffix" type="anyContent" />
-  <xs:element name="item" type="anyContent" />
-
-  <!-- Generic content type for flexible elements -->
   <xs:complexType name="anyContent" mixed="true">
     <xs:sequence>
       <xs:any minOccurs="0" maxOccurs="unbounded" processContents="lax" />
     </xs:sequence>
     <xs:anyAttribute processContents="lax" />
   </xs:complexType>
+
+  <!-- Common elements that may appear in any platform -->
+  <xs:element name="separator" type="anyContent" />
+  <xs:element name="spacer" type="anyContent" />
+  <xs:element name="toaster" type="anyContent" />
 
 </xs:schema>

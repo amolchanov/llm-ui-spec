@@ -9,6 +9,68 @@ Use this prompt template with an LLM (Claude, GPT-4, etc.) to generate a complet
 ```
 You are an expert full-stack developer. Generate a complete, production-ready web application based on the UI Spec XML file provided below.
 
+## Understanding UI Spec
+
+LLM UI Spec uses **two primitives** to define all UI:
+
+| Primitive | Purpose | Examples |
+|-----------|---------|----------|
+| `<element>` | Leaf nodes (no children) | button, text, input, image, icon |
+| `<container>` | Nodes with children | row, column, card, tabs, form |
+
+### Key Attributes
+
+- `type`: The element or container type (e.g., `type="button"`, `type="row"`)
+- `prompt`: Natural language behavior description (styling, events, layout)
+- `use`: Data binding (e.g., `use="@state.user.name"`)
+- `if` / `if-not`: Conditional rendering
+- `for-each`: Iteration over collections
+
+### Prompt Patterns
+
+The `prompt` attribute describes behavior naturally:
+
+```xml
+<!-- Styling -->
+prompt="style primary, large size"
+prompt="gap medium, padding large"
+
+<!-- Behavior -->
+prompt="on click @action.save"
+prompt="on submit @action.create"
+
+<!-- Combined -->
+prompt="style primary, on click @action.save"
+```
+
+### Type Inference
+
+Type is optional when parent context makes it clear:
+
+```xml
+<container type="menu">
+  <element>Edit</element>      <!-- menu item implied -->
+  <element>Delete</element>
+</container>
+
+<container type="tabs">
+  <container prompt="label Overview">Content</container>
+</container>
+```
+
+### Reference Namespaces
+
+| Prefix | Example | Description |
+|--------|---------|-------------|
+| `@entity` | `@entity.User` | Entity schema |
+| `@component` | `@component.Card` | Component |
+| `@action` | `@action.save` | Action |
+| `@guard` | `@guard.auth` | Guard |
+| `@state` | `@state.items` | State |
+| `@item` | `@item.name` | Loop item |
+| `@page` | `@page.Dashboard` | Page (webapp) |
+| `@screen` | `@screen.Home` | Screen (mobile) |
+
 ## Technology Stack
 
 Use the following technologies:
@@ -65,26 +127,55 @@ project/
 ### From Layouts
 - Generate layout components from `<layout>` definitions
 - Implement slots as React children or named slots
-- Handle `role="chrome"` as static layout areas
-- Handle `role="content"` as dynamic page content areas
 
 ### From Components
 - Generate reusable React components from `<component>` definitions
 - Implement props from `<prop>` definitions with TypeScript types
-- Wire up actions from `<action>` definitions
 
-### From Pages
-- Generate page components from `<page>` definitions
+### From Pages/Screens/Views
+- Generate page components from `<page>`, `<screen>`, or `<view>` definitions
 - Set up React Router routes based on `route` attribute
 - Implement data fetching from `<data>` queries
 - Apply layouts using the `layout` attribute
-- Fill slots using `target` attribute references
+- Apply guards for authentication/authorization
+
+### From Two Primitives
+
+**For `<element>` tags:**
+- Map to appropriate React/HTML elements based on `type` attribute
+- `type="text"` → `<p>`, `<span>`, or heading elements based on prompt
+- `type="button"` → `<Button>` component
+- `type="input"` → `<Input>` component
+- `type="image"` → `<img>` element
+- `type="icon"` → Icon component from Lucide
+- `type="badge"` → Badge component
+- `type="link"` → React Router `<Link>` component
+- Parse `prompt` attribute for styling and behavior
+
+**For `<container>` tags:**
+- Map to layout components based on `type` attribute
+- `type="row"` → flex container with `flex-row`
+- `type="column"` → flex container with `flex-col`
+- `type="grid"` → grid container
+- `type="card"` → Card component
+- `type="form"` → `<form>` element with React Hook Form
+- `type="tabs"` → Tabs component
+- `type="accordion"` → Accordion component
+- Parse `prompt` attribute for layout properties (gap, padding, justify, align)
 
 ### From Prompts
-- **Container/Slot prompts**: Implement the UI as described in the prompt
-- **context="true"**: Apply the design context to all children
-- **constraints="true"**: Treat as strict requirements (Must/Must NOT)
-- Use your best judgment for prompts, following the design system
+- Parse `prompt` attribute for styling: "style primary" → variant="primary"
+- Parse `prompt` for layout: "gap medium" → gap-4, "padding large" → p-6
+- Parse `prompt` for events: "on click @action.save" → onClick handler
+- Use best judgment for descriptive prompts
+
+### From Actions
+- Generate action handler functions from `<action>` definitions
+- Parse `prompt` for action behavior (e.g., "submit form, show success toast")
+
+### From Guards
+- Generate route guards from `<guard>` definitions
+- Implement authentication/authorization checks
 
 ### Styling Guidelines
 - Use Tailwind CSS utility classes
@@ -93,8 +184,7 @@ project/
 - Support dark mode via Tailwind's dark: prefix
 
 ### Authentication
-- If `auth="required"` on a page, protect with auth middleware
-- If `auth="guest"`, only allow unauthenticated users
+- If guards are used, implement auth middleware
 - Implement login/logout flows if auth pages exist
 
 ## Output Format
@@ -132,6 +222,43 @@ Generate the complete application now.
 - Backend Node.js API
 - Database schema
 - All configuration files
+
+---
+
+## Example Spec Snippet
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<webapp name="MyApp" version="1.0">
+  <entities>
+    <entity name="User">
+      <field name="id" type="uuid" />
+      <field name="name" type="string" prompt="required" />
+    </entity>
+  </entities>
+
+  <guards>
+    <guard name="auth" prompt="if not authenticated, redirect to login" />
+  </guards>
+
+  <actions>
+    <action name="save" prompt="submit form, show success toast" />
+  </actions>
+
+  <pages>
+    <page name="Dashboard" route="/dashboard">
+      <guards>
+        <guard type="@guard.auth" />
+      </guards>
+      <container type="column" prompt="padding large, gap medium">
+        <element type="text" prompt="heading">Welcome</element>
+        <element type="text" use="@state.user.name" />
+        <element type="button" prompt="style primary, on click @action.save">Save</element>
+      </container>
+    </page>
+  </pages>
+</webapp>
+```
 
 ---
 
@@ -224,15 +351,19 @@ Generate the complete application now.
 
 ## Tips for Better Results
 
-1. **Be specific in prompts**: The more detail in your `<prompt>` elements, the better the generated code
+1. **Use the two primitives**: `<element>` for leaf nodes, `<container>` for nodes with children
 
-2. **Use constraints for requirements**: Mark critical requirements with `constraints="true"` so the LLM treats them as non-negotiable
+2. **Use prompts for styling**: Describe visual appearance naturally in the `prompt` attribute
 
-3. **Define all entities**: Complete entity definitions lead to proper TypeScript types and database schemas
+3. **Use prompts for behavior**: Use patterns like "on click @action.save", "on submit @action.create"
 
-4. **Use context for consistency**: Set `context="true"` on parent prompts to maintain consistent styling across children
+4. **Define guards and actions**: Reusable definitions make your spec cleaner and easier to maintain
 
-5. **Iterate**: Generate, review, and refine your spec based on the output
+5. **Type inference**: Omit `type` when parent context makes it clear (menus, tabs, lists)
+
+6. **Reference namespaces**: Use `@entity`, `@component`, `@action`, `@guard`, `@state` prefixes
+
+7. **Iterate**: Generate, review, and refine your spec based on the output
 
 ---
 

@@ -1,213 +1,239 @@
 # LLM UI Spec Quick Reference
 
-Condensed reference for LLM prompts. For full documentation, see SPEC.md.
+Condensed reference for LLM prompts. For full documentation, see [SPEC.md](./SPEC.md).
+
+## Two Primitives
+
+| Primitive | Purpose | Examples |
+|-----------|---------|----------|
+| `<element>` | Leaf nodes (no children) | button, text, input, image |
+| `<container>` | Nodes with children | row, column, card, tabs |
+
+## Common Attributes
+
+| Attribute | Description |
+|-----------|-------------|
+| `name` | Identifier for referencing |
+| `type` | Element or container type |
+| `prompt` | Natural language description |
+| `use` | Data binding |
+| `if` | Render if true |
+| `if-not` | Render if false |
+| `for-each` | Iterate collection |
+
+## Human Readable Patterns
+
+```xml
+<!-- All attributes (except name) can be in prompt -->
+<element type="button" prompt="style primary, on click @action.save">Save</element>
+
+<!-- Type optional when context is clear -->
+<container type="menu">
+  <element>Edit</element>      <!-- menu item implied -->
+  <element>Delete</element>
+</container>
+
+<!-- Data binding with use -->
+<element type="text" use="@user.name" />
+<element type="image" use="@user.avatar" />
+```
 
 ## Reference Namespaces
 
 | Prefix | Example | Description |
 |--------|---------|-------------|
-| `@entity` | `@entity.User.email` | Entity field |
+| `@entity` | `@entity.User` | Entity schema |
 | `@component` | `@component.Card` | Component |
-| `@page` | `@page.Dashboard` | Page navigation |
-| `@layout` | `@layout.AppShell.content` | Layout slot |
-| `@prop` | `@prop.user` | Component prop |
-| `@state` | `@state.items` | Page/component state |
-| `@param` | `@param.id` | URL parameter |
+| `@action` | `@action.save` | Action |
+| `@guard` | `@guard.auth` | Guard |
+| `@state` | `@state.items` | State |
 | `@item` | `@item.name` | Loop item |
-| `@action` | `@action.save` | Action handler |
-| `@theme` | `@theme.colors.primary` | Theme token |
+| `@page` | `@page.Dashboard` | Page (webapp) |
+| `@screen` | `@screen.Home` | Screen (mobile) |
+| `@modal` | `@modal.Create` | Modal (webapp) |
+| `@sheet` | `@sheet.Options` | Sheet (mobile) |
+| `@layout` | `@layout.AppShell` | Layout |
+| `@prop` | `@prop.user` | Component prop |
+| `@param` | `@param.id` | URL parameter |
 
-## Document Structure
+## Element Types
 
 ```xml
-<webapp name="AppName" version="1.0" detail="full">
-  <entities>...</entities>
-  <layouts>...</layouts>
-  <components>...</components>
-  <pages>...</pages>
-  <navigation>...</navigation>
-  <config>...</config>
-</webapp>
+<!-- Display -->
+<element type="text" prompt="large heading">Title</element>
+<element type="text" prompt="muted" use="@item.description" />
+<element type="icon" prompt="home, size large" />
+<element type="image" use="@user.avatar" prompt="avatar, size 40" />
+<element type="badge" use="@item.status" prompt="style success" />
+<element type="spinner" if="@state.loading" />
+
+<!-- Input -->
+<element type="input" prompt="required, placeholder Enter email">Email</element>
+<element type="textarea" prompt="rows 4">Description</element>
+<element type="select" prompt="options @state.options" />
+<element type="checkbox" use="@state.enabled">Enable</element>
+
+<!-- Actions -->
+<element type="button" prompt="style primary, on click @action.save">Save</element>
+<element type="link" to="@page.Settings">Settings</element>
 ```
 
-## Entity
+## Container Types
+
+```xml
+<!-- Layout -->
+<container type="row" prompt="gap medium, justify between" />
+<container type="column" prompt="padding large, gap small" />
+<container type="grid" prompt="3 columns, medium gap" />
+<container type="card" prompt="padding medium" />
+
+<!-- Interactive -->
+<container type="accordion">
+  <container prompt="label Section 1">Content</container>
+</container>
+
+<container type="tabs">
+  <container prompt="label Overview">Content</container>
+</container>
+
+<container type="form" prompt="on submit @action.save">
+  <element type="input" prompt="required">Name</element>
+  <element type="button" prompt="style primary">Save</element>
+</container>
+```
+
+## Control Flow
+
+```xml
+<!-- Conditional -->
+<element type="spinner" if="@state.loading" />
+<element type="text" if-not="@state.loading">Loaded</element>
+
+<!-- Loops -->
+<container type="card" for-each="@state.items">
+  <element use="@item.name" />
+</container>
+```
+
+## Prompt Patterns
+
+```xml
+<!-- Styling -->
+prompt="style primary"
+prompt="large heading"
+prompt="muted text"
+prompt="gap medium"
+prompt="3 columns"
+
+<!-- Behavior -->
+prompt="on click @action.save"
+prompt="on submit @action.create"
+prompt="on success close modal"
+
+<!-- Conditions -->
+prompt="if @state.loading"
+prompt="for each @state.items"
+
+<!-- Combined -->
+prompt="style primary, large, on click @action.save"
+```
+
+## Actions
+
+```xml
+<actions>
+  <action name="save" prompt="submit form, show success toast" />
+  <action name="delete" prompt="confirm dialog, delete item, refresh" />
+</actions>
+
+<!-- Usage -->
+<element type="button" prompt="on click @action.save">Save</element>
+```
+
+## Guards
+
+```xml
+<guards>
+  <guard name="auth" prompt="if not authenticated, redirect to login" />
+  <guard name="admin" prompt="if not admin, redirect to unauthorized" />
+</guards>
+
+<!-- Usage -->
+<page name="Dashboard">
+  <guards>
+    <guard type="@guard.auth" />
+  </guards>
+</page>
+```
+
+## Entities
 
 ```xml
 <entity name="User">
   <field name="id" type="uuid" />
-  <field name="email" type="email" required="true" />
-  <field name="role" type="enum" values="user,admin" default="user" />
-  <field name="posts" type="ref" ref="@entity.Post" cardinality="many" />
+  <field name="name" type="string" prompt="required" />
+  <field name="email" type="email" prompt="required" />
+  <field name="posts" type="ref" prompt="references @entity.Post, many" />
 </entity>
 ```
 
-**Field types:** `uuid`, `string`, `text`, `email`, `url`, `integer`, `float`, `boolean`, `date`, `datetime`, `time`, `json`, `enum`, `ref`, `image`, `file`
+**Field types:** `uuid`, `string`, `text`, `richtext`, `email`, `url`, `phone`, `number`, `integer`, `decimal`, `boolean`, `date`, `time`, `datetime`, `image`, `file`, `json`, `enum`, `ref`
 
-## Layout
-
-```xml
-<layout name="AppShell">
-  <container layout="column" minHeight="100vh">
-    <slot name="header" position="top" height="64px" role="chrome" />
-    <container layout="row" grow="true">
-      <slot name="sidebar" width="240px" collapsible="true" role="chrome" />
-      <slot name="content" grow="true" scroll="true" role="content" />
-    </container>
-  </container>
-</layout>
-```
-
-**Slot attributes:** `name`, `position` (top/bottom/left/right), `width`, `height`, `grow`, `scroll`, `collapsible`, `role` (chrome/content)
-
-## Component
+## Components
 
 ```xml
-<component name="StatCard">
+<component name="UserCard">
   <props>
-    <prop name="label" type="string" required="true" />
-    <prop name="value" type="number" required="true" />
-    <prop name="icon" type="string" />
+    <prop name="user" type="@entity.User" prompt="required" />
   </props>
-  <actions>
-    <action name="onClick" />
-  </actions>
-  <container layout="column" padding="md">
-    <icon name="@prop.icon" />
-    <text value="@prop.label" variant="caption" />
-    <text value="@prop.value" variant="heading2" />
+  <container type="row" prompt="gap small">
+    <element type="image" use="@prop.user.avatar" />
+    <element use="@prop.user.name" />
   </container>
 </component>
+
+<!-- Usage -->
+<element type="@component.UserCard" use="@state.user" />
+<element type="@component.UserCard" for-each="@state.users" />
 ```
 
-## Page
+## Platform Quick Reference
 
+### Webapp
 ```xml
-<page name="Dashboard" route="/dashboard" layout="AppShell" auth="required">
-  <data>
-    <query name="user" type="@entity.User" source="auth.currentUser" />
-    <query name="items" type="@entity.Item[]" filter="owner == @state.user.id" />
-  </data>
-  <localState>
-    <state name="filter" type="string" default="" />
-  </localState>
-
-  <slot target="@layout.AppShell.header">
-    <use component="AppHeader" user="@state.user" />
-  </slot>
-
-  <slot target="@layout.AppShell.content">
-    <!-- Content here -->
-  </slot>
-
-  <states>
-    <state name="loading"><spinner /></state>
-    <state name="error"><prompt>Error message with retry button</prompt></state>
-  </states>
+<page name="Dashboard" route="/dashboard" layout="@layout.AppShell">
+  <guards><guard type="@guard.auth" /></guards>
+  <data><query name="items" type="@entity.Item[]" /></data>
+  <slot target="@layout.AppShell.content">...</slot>
 </page>
 ```
 
-**Page attributes:** `name`, `route`, `layout`, `auth` (required/guest/none), `title`
-
-## Elements Quick Reference
-
-### Containers
-| Element | Key Attributes |
-|---------|----------------|
-| `container` | `layout` (row/column/grid/center), `gap`, `padding`, `grow` |
-| `row` | `gap`, `align`, `justify`, `wrap` |
-| `column` | `gap`, `align` |
-| `grid` | `columns`, `gap` |
-| `card` | `title`, `padding` |
-| `section` | `title`, `name` |
-| `tabs` | `defaultTab` |
-| `tab` | `name`, `label`, `icon` |
-
-### Text & Display
-| Element | Key Attributes |
-|---------|----------------|
-| `text` | `value`, `variant` (heading1-3/body/caption), `muted` |
-| `heading` | `level` (1-6) |
-| `icon` | `name`, `size` |
-| `image` | `src`, `alt`, `width`, `height` |
-| `badge` | `value`, `variant` (primary/success/warning/danger) |
-| `divider` | `orientation` |
-| `spinner` | `size` |
-
-### Form Elements
-| Element | Key Attributes |
-|---------|----------------|
-| `form` | `onSubmit`, `entity` |
-| `input` | `type`, `name`, `label`, `bind`, `required`, `placeholder` |
-| `textarea` | `name`, `label`, `bind`, `rows` |
-| `select` | `name`, `label`, `bind`, `options` |
-| `checkbox` | `name`, `label`, `bind` |
-| `switch` | `name`, `label`, `bind` |
-| `datepicker` | `name`, `label`, `bind` |
-
-### Buttons & Links
-| Element | Key Attributes |
-|---------|----------------|
-| `button` | `variant` (primary/secondary/outline/ghost/danger), `onClick`, `icon`, `disabled` |
-| `link` | `to`, `variant` |
-
-### Data Display
-| Element | Key Attributes |
-|---------|----------------|
-| `table` | + `thead`, `tbody`, `tr`, `th`, `td` |
-| `list` | `data`, `empty` |
-| `stat` | `label`, `value`, `trend` |
-| `pagination` | `pageSize`, `total`, `current` |
-
-### Interactive
-| Element | Key Attributes |
-|---------|----------------|
-| `modal` | `name`, `title`, `size` |
-| `drawer` | `name`, `position`, `size` |
-| `dropdown` | `trigger` + `menu`, `menuItem` |
-| `tooltip` | `content` |
-
-### Logic & Control
-| Element | Key Attributes |
-|---------|----------------|
-| `if` | `condition` |
-| `else` | - |
-| `for` | `each`, `in` |
-| `slot` | `name` (define) or `target` (fill) |
-| `use` | `component` + props |
-
-## Prompt Element
-
+### Mobile
 ```xml
-<!-- Simple prompt -->
-<prompt>Description of what to generate</prompt>
-
-<!-- With modifiers -->
-<prompt context="true" constraints="true">
-  Design: Modern, minimal style with blue accent colors.
-
-  Must include loading states.
-  Must NOT show raw IDs to users.
-</prompt>
+<screen name="Dashboard" prompt="initial">
+  <guards><guard type="@guard.auth" /></guards>
+  <container type="list" prompt="pull to refresh @action.refresh" for-each="@state.items">
+    <container prompt="chevron, on tap push @screen.Detail">...</container>
+  </container>
+</screen>
 ```
 
-**Attributes:** `context` (inherits to children), `constraints` (strict rules), `override` (ignore parent context)
-
-## Navigation
-
+### Desktop
 ```xml
-<navigation>
-  <guards>
-    <guard name="auth" redirect="/login" />
-    <guard name="admin" role="admin" redirect="/unauthorized" />
-  </guards>
-</navigation>
+<view name="Dashboard">
+  <guards><guard type="@guard.auth" /></guards>
+  <container type="split-view" prompt="horizontal">
+    <container type="panel" prompt="width 250px, resizable">...</container>
+    <container type="panel" prompt="grow">...</container>
+  </container>
+</view>
 ```
 
-## Detail Levels
+## File Organization
 
-| Level | Attribute | Contains |
-|-------|-----------|----------|
-| L1 | `detail="requirements"` | Prompts for entire pages/layouts |
-| L2 | `detail="structure"` | Slots + section prompts |
-| L3 | `detail="detailed"` | Containers, loops, component refs |
-| L4 | `detail="full"` | Complete UI, no prompts |
+| Platform | Pattern |
+|----------|---------|
+| Shared | `app.shared.spec.xml` |
+| Webapp | `app.webapp.spec.xml` |
+| Mobile | `app.mobile.spec.xml` |
+| Desktop | `app.desktop.spec.xml` |

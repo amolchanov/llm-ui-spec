@@ -310,19 +310,22 @@ Bottom sheets for overlays (replaces modals on mobile).
 
 ## Alerts
 
-Native-style alert dialogs for confirmations.
+Native-style alert dialogs for confirmations. Alert children use type inference:
+- First element without a role is the message text
+- Elements with `role` in prompt are action buttons
 
 ```xml
 <alerts>
+  <!-- Type inference: first child is message, others are actions -->
   <alert name="ConfirmDelete" prompt="title Delete Item?, style destructive">
-    <element type="text">This action cannot be undone.</element>
-    <element type="alert-action" prompt="role cancel">Cancel</element>
-    <element type="alert-action" prompt="role destructive, on tap @callback">Delete</element>
+    <element>This action cannot be undone.</element>
+    <element prompt="role cancel">Cancel</element>
+    <element prompt="role destructive, on tap @callback">Delete</element>
   </alert>
 
   <alert name="Saved" prompt="title Success">
-    <element type="text">Your changes have been saved.</element>
-    <element type="alert-action" prompt="role default">OK</element>
+    <element>Your changes have been saved.</element>
+    <element prompt="role default">OK</element>
   </alert>
 </alerts>
 ```
@@ -436,9 +439,9 @@ Complete mobile spec structure:
 
   <alerts>
     <alert name="ConfirmDelete" prompt="title Delete?, style destructive">
-      <element type="text">This cannot be undone.</element>
-      <element type="alert-action" prompt="role cancel">Cancel</element>
-      <element type="alert-action" prompt="role destructive, on tap @callback">Delete</element>
+      <element>This cannot be undone.</element>
+      <element prompt="role cancel">Cancel</element>
+      <element prompt="role destructive, on tap @callback">Delete</element>
     </alert>
   </alerts>
 </mobileapp>

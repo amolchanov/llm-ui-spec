@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<spec type="layout" webapp="FormCraft">
+<spec type="layout" name="FormCraft">
   <layout name="AppShell">
-    <container layout="column" minHeight="100vh">
-      <slot name="header" position="top" sticky="true" height="64px" role="chrome" />
-      <container layout="row" grow="true">
-        <slot name="sidebar" width="240px" collapsible="true" breakpoint="md" role="chrome" />
-        <slot name="content" grow="true" scroll="true" padding="lg" role="content" />
+    <container type="column" prompt="min height 100vh">
+      <slot name="header" prompt="position top, sticky, height 64px" />
+      <container type="row" prompt="grow">
+        <slot name="sidebar" prompt="width 240px, collapsible, breakpoint md" />
+        <slot name="content" prompt="grow, scroll, padding large" />
       </container>
     </container>
   </layout>
