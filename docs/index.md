@@ -28,6 +28,8 @@ features:
     details: Start with requirements, progressively add detail through 4 specification levels
 ---
 
+> **Preview:** This specification is under active development and may change.
+
 ## Why LLM UI Spec?
 
 **Keep LLMs grounded.** Without a spec, LLMs make assumptions about your UI that drift from your intent. Each generation becomes harder to control.
