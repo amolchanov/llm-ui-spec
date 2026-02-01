@@ -53,21 +53,24 @@ At each level, validate with stakeholders before adding more detail. Generate co
 ## Quick Example
 
 ```xml
-<webapp name="MyApp" version="1.0">
-  <entities>
-    <entity name="Task">
-      <field name="id" type="uuid" />
-      <field name="title" type="string" required="true" />
-      <field name="completed" type="boolean" default="false" />
-    </entity>
-  </entities>
-
+<webapp name="MyApp">
   <pages>
-    <page name="Dashboard" route="/dashboard">
-      <prompt>
-        Task dashboard with filterable list and quick-add form.
-        Show completion stats at the top.
-      </prompt>
+    <page name="Dashboard" route="/">
+      <container type="column" prompt="padding large, gap medium">
+        <element type="text" prompt="large title">Welcome</element>
+
+        <container type="card" prompt="padding medium">
+          <element type="text" prompt="heading">Quick Stats</element>
+          <container type="row" prompt="gap large">
+            <element>Tasks: 12</element>
+            <element>Completed: 8</element>
+          </container>
+        </container>
+
+        <element type="button" prompt="style primary, on click @action.create">
+          Create Task
+        </element>
+      </container>
     </page>
   </pages>
 </webapp>
